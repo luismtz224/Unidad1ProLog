@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Registro de perritos de la calle</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <svg class="paw" viewBox="0 0 64 64" aria-hidden="true">
+      <ellipse cx="32" cy="42" rx="16" ry="13" fill="currentColor"/>
+      <ellipse cx="14" cy="24" rx="7" ry="9" fill="currentColor"/>
+      <ellipse cx="30" cy="14" rx="7.5" ry="9.5" fill="currentColor"/>
+      <ellipse cx="47" cy="16" rx="7" ry="9" fill="currentColor"/>
+      <ellipse cx="55" cy="30" rx="6.5" ry="8.5" fill="currentColor"/>
+    </svg>
+    <div class="header-text">
+      <h1>Perritos de la calle</h1>
+      <p>Regístralos donde los veas y ve qué perros hay y dónde andan.</p>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Secciones">
+  <button class="tab active" data-view="form">Registrar</button>
+  <button class="tab" data-view="map">Mapa</button>
+  <button class="tab" data-view="list">Lista</button>
+</nav>
+
+<main>
+
+  <!-- formulario -->
+  <section id="view-form" class="view active">
+    <form id="dog-form" novalidate>
+
+      <div class="field">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Ej. Canela" required />
+        <p class="error" data-for="nombre"></p>
+      </div>
+
+      <div class="field photo-field">
+        <label>Foto</label>
+        <div class="photo-buttons">
+          <label class="photo-btn">
+            <input type="file" id="foto-camara" accept="image/*" capture="environment" hidden />
+            Tomar foto
+          </label>
+          <label class="photo-btn secondary">
+            <input type="file" id="foto-archivo" accept="image/jpeg,image/png,image/webp" hidden />
+            Subir archivo
+          </label>
+        </div>
+        <img id="foto-preview" alt="" hidden />
+        <p class="error" data-for="foto"></p>
+      </div>
+
+      <div class="field">
+        <label for="raza">Raza <span class="opt">(opcional)</span></label>
+        <select id="raza" name="raza">
+          <option value="">Sin raza definida / criollo</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="color-principal">Color principal</label>
+        <select id="color-principal" name="color-principal" required>
+          <option value="">Selecciona un color</option>
+        </select>
+        <p class="error" data-for="color-principal"></p>
+      </div>
+
+      <div class="field">
+        <label>Colores adicionales <span class="opt">(hasta 2)</span></label>
+        <div class="color-extra-row">
+          <select id="color-extra-1"><option value="">Ninguno</option></select>
+          <select id="color-extra-2"><option value="">Ninguno</option></select>
+        </div>
+        <p class="error" data-for="colores"></p>
+      </div>
+
+      <div class="field">
+        <label>Ubicación</label>
+        <div class="location-controls">
+          <button type="button" id="btn-mi-ubicacion" class="ghost-btn">Usar mi ubicación</button>
+          <span id="coords-label" class="coords-label">Sin ubicación</span>
+        </div>
+        <div id="form-map" class="mini-map"></div>
+        <p class="hint">Arrastra el pin si no quedó en el lugar correcto.</p>
+        <p class="error" data-for="ubicacion"></p>
+      </div>
+
+      <button type="submit" class="submit-btn">Registrar perrito</button>
+      <p id="form-status" class="form-status" role="status"></p>
+    </form>
+  </section>
+
+  <!-- mapa -->
+  <section id="view-map" class="view">
+    <div id="full-map" class="full-map"></div>
+  </section>
+
+  <!-- lista -->
+  <section id="view-list" class="view">
+    <ul id="dog-list" class="dog-list"></ul>
+  </section>
+
+  <!-- detalle -->
+  <section id="view-detail" class="view">
+    <div class="detail-header">
+      <button id="back-to-list" class="ghost-btn">← Volver a la lista</button>
+      <button id="btn-eliminar" class="danger-btn">Eliminar registro</button>
+    </div>
+    <div id="detail-content" class="detail-content"></div>
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
