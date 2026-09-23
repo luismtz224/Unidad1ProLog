@@ -4,9 +4,32 @@ const RAZAS = [
   "Poodle", "Xoloitzcuintle", "Husky Siberiano", "Bulldog Francés", "Beagle"
 ];
 
+// cada color trae su hex real para pintar los círculos de las fichas
 const COLORES = [
-  "Negro", "Blanco", "Café", "Dorado", "Gris",
-  "Atigrado", "Manchado", "Crema", "Rojizo", "Negro y blanco"
+  { nombre: "Negro", hex: "#2b2623" },
+  { nombre: "Blanco", hex: "#fbf8f2" },
+  { nombre: "Café", hex: "#7b4b2a" },
+  { nombre: "Dorado", hex: "#d6a24a" },
+  { nombre: "Gris", hex: "#9b958c" },
+  { nombre: "Atigrado", hex: "repeating-linear-gradient(45deg,#7b4b2a 0 4px,#2b2623 4px 8px)" },
+  { nombre: "Manchado", hex: "radial-gradient(circle at 32% 34%,#2b2623 0 22%,transparent 23%),radial-gradient(circle at 70% 70%,#2b2623 0 17%,transparent 18%),#fbf8f2" },
+  { nombre: "Crema", hex: "#ecd8b2" },
+  { nombre: "Rojizo", hex: "#b0522a" },
+  { nombre: "Negro y blanco", hex: "linear-gradient(135deg,#2b2623 50%,#fbf8f2 50%)" }
+];
+const HEX_POR_COLOR = Object.fromEntries(COLORES.map(c => [c.nombre, c.hex]));
+
+// declarada arriba de todo porque varias funciones (la vista previa,
+// la validación, el manejo de la cámara) la leen desde el principio
+let fotoDataUrl = null;
+
+// tintes de fondo para la foto cuando el perrito no tiene una — se
+// eligen recorriendo este arreglo, no al azar, para que la misma
+// tarjeta no cambie de color cada vez que se vuelve a dibujar
+const TINTES = [
+  { bg: "#e1eecc", ink: "#56633f" },
+  { bg: "#ffdccb", ink: "#953014" },
+  { bg: "#ddd5c4", ink: "#474138" }
 ];
 
 let PERRITOS = [
@@ -29,8 +52,115 @@ let PERRITOS = [
     lat: 25.4295, lng: -100.9855,
     foto: null,
     fecha: "2026-09-21T15:30:00"
+  },
+  {
+    id: "mock-3",
+    nombre: "Luna",
+    raza: null,
+    colorPrincipal: "Crema",
+    coloresAdicionales: [],
+    lat: 25.4210, lng: -101.0120,
+    foto: null,
+    fecha: "2026-09-22T08:10:00"
+  },
+  {
+    id: "mock-4",
+    nombre: "Chispa",
+    raza: "Chihuahua",
+    colorPrincipal: "Dorado",
+    coloresAdicionales: ["Blanco"],
+    lat: 25.4455, lng: -100.9950,
+    foto: null,
+    fecha: "2026-09-18T12:00:00"
+  },
+  {
+    id: "mock-5",
+    nombre: "Toby",
+    raza: "Schnauzer",
+    colorPrincipal: "Gris",
+    coloresAdicionales: [],
+    lat: 25.4150, lng: -100.9900,
+    foto: null,
+    fecha: "2026-09-15T09:45:00"
+  },
+  {
+    id: "mock-6",
+    nombre: "Manchas",
+    raza: null,
+    colorPrincipal: "Manchado",
+    coloresAdicionales: [],
+    lat: 25.4330, lng: -101.0230,
+    foto: null,
+    fecha: "2026-09-19T18:20:00"
   }
 ];
+
+// fecha relativa tipo "hace 2 días" para las fichas y el detalle
+function cuando(iso) {
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (dias <= 0) return "hoy";
+  if (dias === 1) return "ayer";
+  if (dias < 7) return `hace ${dias} días`;
+  return "el " + new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+}
+
+// tinte determinístico por id, así la misma ficha siempre sale del
+// mismo color aunque se vuelva a dibujar la lista
+function tintePara(id) {
+  const suma = [...id].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return TINTES[suma % TINTES.length];
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ============================================================
+// MODO OSCURO / CLARO
+// ============================================================
+// La preferencia elegida a mano (botón) manda sobre la del sistema.
+// Sin elección guardada, se usa lo que diga prefers-color-scheme.
+const CLAVE_TEMA = "perritos-tema";
+
+function temaEfectivo() {
+  const guardado = localStorage.getItem(CLAVE_TEMA);
+  if (guardado === "light" || guardado === "dark") return guardado;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function aplicarTema(tema) {
+  document.documentElement.setAttribute("data-theme", tema);
+}
+
+aplicarTema(temaEfectivo());
+
+document.getElementById("theme-toggle").addEventListener("click", () => {
+  const nuevo = temaEfectivo() === "dark" ? "light" : "dark";
+  localStorage.setItem(CLAVE_TEMA, nuevo);
+  aplicarTema(nuevo);
+});
+
+// ============================================================
+// CINTA "¿LO HAS VISTO?"
+// ============================================================
+// nombres generados con .map() a partir de PERRITOS (transformación
+// funcional, no imperativa con for/ciclos). Se repite el arreglo dos
+// veces para que la animación de scroll se vea continua sin salto.
+function renderizarTicker() {
+  const track = document.getElementById("ticker-track");
+  const nombres = PERRITOS.map(p => p.nombre);
+
+  const itemsHtml = nombres
+    .map(nombre => `
+      <span class="ticker-item">${escapeHtml(nombre)}</span>
+      <span class="ticker-item pregunta">¿Lo has visto?<span class="dot"></span></span>
+    `)
+    .join("");
+
+  track.innerHTML = itemsHtml + itemsHtml;
+}
 
 // inicializar — catálogos
 function llenarSelect(select, opciones) {
@@ -43,9 +173,74 @@ function llenarSelect(select, opciones) {
 }
 
 llenarSelect(document.getElementById("raza"), RAZAS);
-llenarSelect(document.getElementById("color-principal"), COLORES);
-llenarSelect(document.getElementById("color-extra-1"), COLORES);
-llenarSelect(document.getElementById("color-extra-2"), COLORES);
+renderizarTicker();
+
+// ============================================================
+// COLORES DEL FORMULARIO — botones tipo "swatch"
+// ============================================================
+// coloresElegidos guarda el orden de selección: el primero es
+// siempre el color principal, los demás son adicionales (máx 3).
+let coloresElegidos = [];
+
+function toggleColor(nombre) {
+  const idx = coloresElegidos.indexOf(nombre);
+  if (idx >= 0) {
+    coloresElegidos.splice(idx, 1);
+  } else if (coloresElegidos.length < 3) {
+    coloresElegidos.push(nombre);
+  }
+  renderizarSwatches();
+  actualizarPreview();
+}
+
+function renderizarSwatches() {
+  const cont = document.getElementById("color-swatches");
+  cont.innerHTML = COLORES.map(c => {
+    const idx = coloresElegidos.indexOf(c.nombre);
+    const clase = idx === 0 ? "picked-principal" : idx > 0 ? "picked-extra" : "";
+    const tagPrincipal = idx === 0 ? `<span class="swatch-tag">principal</span>` : "";
+    return `
+      <button type="button" class="swatch-btn ${clase}" data-color="${escapeHtml(c.nombre)}">
+        <span class="swatch-dot" style="background:${c.hex}"></span>
+        ${escapeHtml(c.nombre)}
+        ${tagPrincipal}
+      </button>
+    `;
+  }).join("");
+
+  cont.querySelectorAll(".swatch-btn").forEach(btn => {
+    btn.addEventListener("click", () => toggleColor(btn.dataset.color));
+  });
+}
+renderizarSwatches();
+
+// ============================================================
+// VISTA PREVIA EN VIVO (solo se ve en pantallas anchas)
+// ============================================================
+function actualizarPreview() {
+  const nombreVal = document.getElementById("nombre").value.trim();
+  document.getElementById("preview-name").textContent = nombreVal || "Aún sin nombre";
+
+  const razaVal = document.getElementById("raza").value;
+  document.getElementById("preview-breed").textContent = razaVal || "Sin raza definida";
+
+  const fotoCont = document.getElementById("preview-photo");
+  if (fotoDataUrl) {
+    fotoCont.innerHTML = `<img src="${fotoDataUrl}" alt="" />`;
+  } else if (nombreVal) {
+    fotoCont.innerHTML = `<span class="initial">${escapeHtml(nombreVal[0].toUpperCase())}</span>`;
+  } else {
+    fotoCont.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`;
+  }
+
+  document.getElementById("preview-colors").innerHTML = coloresElegidos
+    .map(c => `<span style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>`)
+    .join("");
+}
+
+document.getElementById("nombre").addEventListener("input", actualizarPreview);
+document.getElementById("raza").addEventListener("change", actualizarPreview);
+actualizarPreview();
 
 // pestañas
 const tabs = document.querySelectorAll(".tab");
@@ -124,10 +319,9 @@ function renderizarMapaCompleto() {
 }
 renderizarMapaCompleto();
 
-// foto del cachou feliz
-
-let fotoDataUrl = null;
-
+// ============================================================
+// FOTO — subir de galería
+// ============================================================
 function manejarFoto(input) {
   const file = input.files[0];
   if (!file) return;
@@ -142,14 +336,92 @@ function manejarFoto(input) {
     preview.src = fotoDataUrl;
     preview.hidden = false;
     mostrarError("foto", "");
+    actualizarPreview();
   };
   reader.readAsDataURL(file);
 }
 
-document.getElementById("foto-camara").addEventListener("change", e => manejarFoto(e.target));
 document.getElementById("foto-archivo").addEventListener("change", e => manejarFoto(e.target));
+document.getElementById("foto-camara-fallback").addEventListener("change", e => manejarFoto(e.target));
 
-// validacion de formulario
+// ============================================================
+// FOTO — cámara en vivo con getUserMedia()
+// ============================================================
+// A diferencia de un <input capture> suelto (que en laptop solo abre
+// el explorador de archivos, nunca la webcam), esto sí pide permiso
+// de cámara de verdad — funciona igual en laptop que en celular. Si
+// el navegador no lo soporta o el usuario niega el permiso, cae al
+// input de archivo de respaldo (que en celular sigue abriendo la
+// cámara nativa del sistema).
+const dialogCamara = document.getElementById("dialog-camara");
+const cameraVideo = document.getElementById("camera-video");
+const cameraError = document.getElementById("camera-error");
+let cameraStream = null;
+
+async function abrirCamara() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById("foto-camara-fallback").click();
+    return;
+  }
+
+  dialogCamara.hidden = false;
+  cameraError.hidden = true;
+  cameraError.innerHTML = "";
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
+    });
+    cameraVideo.srcObject = cameraStream;
+  } catch (err) {
+    cameraError.hidden = false;
+    cameraError.innerHTML = `
+      <span>No pudimos abrir la cámara. Revisa los permisos del navegador o usa la del sistema.</span>
+      <button type="button" class="photo-btn" id="camera-usar-sistema">Abrir cámara del sistema</button>
+    `;
+    document.getElementById("camera-usar-sistema").addEventListener("click", () => {
+      cerrarCamara();
+      document.getElementById("foto-camara-fallback").click();
+    });
+  }
+}
+
+function cerrarCamara() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  cameraVideo.srcObject = null;
+  dialogCamara.hidden = true;
+}
+
+function capturarFoto() {
+  if (!cameraVideo.videoWidth) return; // el video aún no está listo
+  const maxAncho = 1100;
+  const escala = Math.min(1, maxAncho / Math.max(cameraVideo.videoWidth, cameraVideo.videoHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(cameraVideo.videoWidth * escala);
+  canvas.height = Math.round(cameraVideo.videoHeight * escala);
+  canvas.getContext("2d").drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+  fotoDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  const preview = document.getElementById("foto-preview");
+  preview.src = fotoDataUrl;
+  preview.hidden = false;
+  mostrarError("foto", "");
+  actualizarPreview();
+  cerrarCamara();
+}
+
+document.getElementById("btn-tomar-foto").addEventListener("click", abrirCamara);
+document.getElementById("camera-cancelar").addEventListener("click", cerrarCamara);
+document.getElementById("camera-capturar").addEventListener("click", capturarFoto);
+dialogCamara.addEventListener("click", e => { if (e.target === dialogCamara) cerrarCamara(); });
+
+// ============================================================
+// VALIDACIÓN DE FORMULARIO
+// ============================================================
 function mostrarError(campo, mensaje) {
   const el = document.querySelector(`.error[data-for="${campo}"]`);
   if (el) el.textContent = mensaje;
@@ -174,25 +446,12 @@ function validarFormulario() {
     valido = false;
   }
 
-  const colorPrincipal = document.getElementById("color-principal").value;
-  if (!colorPrincipal) {
-    mostrarError("color-principal", "Elige un color principal.");
+  if (coloresElegidos.length === 0) {
+    mostrarError("colores", "Elige al menos un color (el primero que toques es el principal).");
     valido = false;
   }
-
-  const extra1 = document.getElementById("color-extra-1").value;
-  const extra2 = document.getElementById("color-extra-2").value;
-  const extras = [extra1, extra2].filter(Boolean);
-  const todos = [colorPrincipal, ...extras].filter(Boolean);
-  const sinDuplicados = new Set(todos).size === todos.length;
-  if (!sinDuplicados) {
-    mostrarError("colores", "No repitas un color entre el principal y los adicionales.");
-    valido = false;
-  }
-  if (todos.length > 3) {
-    mostrarError("colores", "Máximo 3 colores en total.");
-    valido = false;
-  }
+  // no hace falta checar duplicados ni el máximo de 3: toggleColor()
+  // ya lo impide desde la interfaz
 
   if (!ubicacionSeleccionada) {
     mostrarError("ubicacion", "Marca un punto en el mapa o usa tu ubicación.");
@@ -205,7 +464,6 @@ function validarFormulario() {
 // IDEMPOTENCIA: Se genera UNA vez al cargar el formulario.
 // si el usuario envía dos veces, se manda la misma clave
 // y el backend debe devolver el mismo registro sin duplicar
-
 let idempotencyKey = crypto.randomUUID();
 
 // submit del formulario
@@ -225,8 +483,8 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
     idempotencyKey,
     nombre: document.getElementById("nombre").value.trim(),
     raza: document.getElementById("raza").value || null,
-    colorPrincipal: document.getElementById("color-principal").value,
-    coloresAdicionales: [document.getElementById("color-extra-1").value, document.getElementById("color-extra-2").value].filter(Boolean),
+    colorPrincipal: coloresElegidos[0],
+    coloresAdicionales: coloresElegidos.slice(1),
     lat: ubicacionSeleccionada.lat,
     lng: ubicacionSeleccionada.lng,
     foto: fotoDataUrl
@@ -258,20 +516,20 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   e.target.reset();
   fotoDataUrl = null;
   document.getElementById("foto-preview").hidden = true;
+  coloresElegidos = [];
+  renderizarSwatches();
   ubicacionSeleccionada = null;
   if (formMarker) { formMap.removeLayer(formMarker); formMarker = null; }
   actualizarCoordsLabel();
+  actualizarPreview();
   idempotencyKey = crypto.randomUUID(); // nueva clave para el siguiente registro
   renderizarMapaCompleto();
+  renderizarTicker();
 });
 
-// lista y detalle
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
+// ============================================================
+// LISTA Y DETALLE
+// ============================================================
 function renderizarLista() {
   const ul = document.getElementById("dog-list");
   ul.innerHTML = "";
@@ -281,13 +539,27 @@ function renderizarLista() {
     return;
   }
 
-  PERRITOS.forEach(p => {
+  PERRITOS.forEach((p, i) => {
+    const tinte = tintePara(p.id);
+    const inclinacion = (i % 2 === 0 ? -1 : 1) * (1 + (i % 3));
     const li = document.createElement("li");
+    li.className = "dog-card";
+    li.style.setProperty("--tilt", `${inclinacion}deg`);
+    li.style.setProperty("--tint-bg", tinte.bg);
+    li.style.setProperty("--tint-ink", tinte.ink);
     li.innerHTML = `
-      <img src="${p.foto || ''}" alt="" onerror="this.style.background='var(--line)'" />
-      <div>
-        <div class="li-name">${escapeHtml(p.nombre)}</div>
-        <div class="li-colors">${escapeHtml([p.colorPrincipal, ...p.coloresAdicionales].join(", "))}</div>
+      <div class="dog-photo">
+        ${p.foto
+          ? `<img src="${p.foto}" alt="" />`
+          : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
+        <span class="seen-tag">Visto ${cuando(p.fecha)}</span>
+      </div>
+      <div class="dog-card-body">
+        <div class="name">${escapeHtml(p.nombre)}</div>
+        <div class="breed">${escapeHtml(p.raza || "Sin raza definida")}</div>
+        <div class="dot-row">
+          ${[p.colorPrincipal, ...p.coloresAdicionales].map(c => `<span style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>`).join("")}
+        </div>
       </div>
     `;
     li.addEventListener("click", () => mostrarDetalle(p.id));
@@ -303,35 +575,52 @@ function mostrarDetalle(id) {
   currentDetailId = id;
   const p = PERRITOS.find(x => x.id === id);
   if (!p) return;
+  const tinte = tintePara(p.id);
   const cont = document.getElementById("detail-content");
   cont.innerHTML = `
-    ${p.foto ? `<img src="${p.foto}" alt="Foto de ${escapeHtml(p.nombre)}" />` : ""}
-    <h2>${escapeHtml(p.nombre)}</h2>
-    <p>${escapeHtml(p.raza || "Sin raza definida / criollo")}</p>
-    <div class="tag-row">
-      <span class="tag">${escapeHtml(p.colorPrincipal)}</span>
-      ${p.coloresAdicionales.map(c => `<span class="tag">${escapeHtml(c)}</span>`).join("")}
+    <div class="detail-photo" style="--tint-bg:${tinte.bg};--tint-ink:${tinte.ink}">
+      ${p.foto
+        ? `<img src="${p.foto}" alt="Foto de ${escapeHtml(p.nombre)}" />`
+        : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
     </div>
-    <p class="hint">Visto el ${new Date(p.fecha).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}</p>
+    <h2>${escapeHtml(p.nombre)}</h2>
+    <p class="breed">${escapeHtml(p.raza || "Sin raza definida / criollo")}</p>
+    <div class="tag-row">
+      ${[p.colorPrincipal, ...p.coloresAdicionales].map(c => `
+        <span class="tag"><span class="swatch-dot" style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>${escapeHtml(c)}</span>
+      `).join("")}
+    </div>
+    <p class="hint" style="margin-top:16px">Visto ${cuando(p.fecha)}</p>
   `;
   irAVista("detail");
 }
 
-// ELIMINAR
-// por ahora solo quita del arreglo PERRITOS en memoria.
-
-// cuando exista el backend, aquí va:
+// ELIMINAR— usa un diálogo propio en vez de confirm() del navegador. 
+// Por ahora solo quita del arreglo PERRITOS en memoria; cuando exista el backend:
 // await fetch(`/api/perritos/${currentDetailId}`, { method: "DELETE" });
+const dialogEliminar = document.getElementById("dialog-eliminar");
+
 document.getElementById("btn-eliminar").addEventListener("click", () => {
   if (!currentDetailId) return;
   const p = PERRITOS.find(x => x.id === currentDetailId);
   if (!p) return;
+  document.getElementById("dialog-eliminar-titulo").textContent = `¿Eliminar el registro de ${p.nombre}?`;
+  dialogEliminar.hidden = false;
+});
 
-  const confirmado = confirm(`¿Eliminar el registro de ${p.nombre}? No se puede deshacer.`);
-  if (!confirmado) return;
+document.getElementById("dialog-cancelar").addEventListener("click", () => {
+  dialogEliminar.hidden = true;
+});
 
+document.getElementById("dialog-confirmar").addEventListener("click", () => {
   PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
   currentDetailId = null;
+  dialogEliminar.hidden = true;
   renderizarMapaCompleto();
+  renderizarTicker();
   irAVista("list");
+});
+
+dialogEliminar.addEventListener("click", e => {
+  if (e.target === dialogEliminar) dialogEliminar.hidden = true;
 });
