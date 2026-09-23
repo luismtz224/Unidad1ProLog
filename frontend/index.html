@@ -5,100 +5,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Registro de perritos de la calle</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker-track" aria-hidden="true"></div>
+</div>
+
 <header class="site-header">
   <div class="header-inner">
-    <svg class="paw" viewBox="0 0 64 64" aria-hidden="true">
-      <ellipse cx="32" cy="42" rx="16" ry="13" fill="currentColor"/>
-      <ellipse cx="14" cy="24" rx="7" ry="9" fill="currentColor"/>
-      <ellipse cx="30" cy="14" rx="7.5" ry="9.5" fill="currentColor"/>
-      <ellipse cx="47" cy="16" rx="7" ry="9" fill="currentColor"/>
-      <ellipse cx="55" cy="30" rx="6.5" ry="8.5" fill="currentColor"/>
+    <svg class="paw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/>
+      <path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>
     </svg>
     <div class="header-text">
       <h1>Perritos de la calle</h1>
-      <p>Regístralos donde los veas y ve qué perros hay y dónde andan.</p>
+      <p>Regístralos donde los veas. Así sabemos qué perros hay y dónde andan.</p>
     </div>
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Cambiar entre modo claro y oscuro">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+      </svg>
+    </button>
   </div>
+  <nav class="tabs" aria-label="Secciones">
+    <button class="tab active" data-view="form">Registrar</button>
+    <button class="tab" data-view="map">Mapa</button>
+    <button class="tab" data-view="list">Lista</button>
+  </nav>
 </header>
-
-<nav class="tabs" aria-label="Secciones">
-  <button class="tab active" data-view="form">Registrar</button>
-  <button class="tab" data-view="map">Mapa</button>
-  <button class="tab" data-view="list">Lista</button>
-</nav>
 
 <main>
 
   <!-- formulario -->
   <section id="view-form" class="view active">
-    <form id="dog-form" novalidate>
+    <div class="form-layout">
+      <form id="dog-form" novalidate>
 
-      <div class="field">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Ej. Canela" required />
-        <p class="error" data-for="nombre"></p>
-      </div>
-
-      <div class="field photo-field">
-        <label>Foto</label>
-        <div class="photo-buttons">
-          <label class="photo-btn">
-            <input type="file" id="foto-camara" accept="image/*" capture="environment" hidden />
-            Tomar foto
-          </label>
-          <label class="photo-btn secondary">
-            <input type="file" id="foto-archivo" accept="image/jpeg,image/png,image/webp" hidden />
-            Subir archivo
-          </label>
+        <div class="step">
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <h3>¿Cómo le dicen?</h3>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej. Canela" maxlength="40" required />
+            <p class="hint">Si no sabes su nombre, ponle uno. Así lo reconocemos todos.</p>
+            <p class="error" data-for="nombre"></p>
+          </div>
         </div>
-        <img id="foto-preview" alt="" hidden />
-        <p class="error" data-for="foto"></p>
-      </div>
 
-      <div class="field">
-        <label for="raza">Raza <span class="opt">(opcional)</span></label>
-        <select id="raza" name="raza">
-          <option value="">Sin raza definida / criollo</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="color-principal">Color principal</label>
-        <select id="color-principal" name="color-principal" required>
-          <option value="">Selecciona un color</option>
-        </select>
-        <p class="error" data-for="color-principal"></p>
-      </div>
-
-      <div class="field">
-        <label>Colores adicionales <span class="opt">(hasta 2)</span></label>
-        <div class="color-extra-row">
-          <select id="color-extra-1"><option value="">Ninguno</option></select>
-          <select id="color-extra-2"><option value="">Ninguno</option></select>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <h3>Una foto</h3>
+            <div class="photo-buttons">
+              <button type="button" id="btn-tomar-foto" class="photo-btn">Tomar foto</button>
+              <label class="photo-btn secondary">
+                <input type="file" id="foto-archivo" accept="image/jpeg,image/png,image/webp" hidden />
+                Subir de galería
+              </label>
+            </div>
+            <!-- respaldo: si la cámara en vivo no está disponible en el
+                 navegador, este input (con capture) abre la cámara nativa
+                 en celulares, o el explorador de archivos en escritorio -->
+            <input type="file" id="foto-camara-fallback" accept="image/*" capture="environment" hidden />
+            <img id="foto-preview" alt="" hidden />
+            <p class="error" data-for="foto"></p>
+          </div>
         </div>
-        <p class="error" data-for="colores"></p>
-      </div>
 
-      <div class="field">
-        <label>Ubicación</label>
-        <div class="location-controls">
-          <button type="button" id="btn-mi-ubicacion" class="ghost-btn">Usar mi ubicación</button>
-          <span id="coords-label" class="coords-label">Sin ubicación</span>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <h3>Cómo es</h3>
+            <div>
+              <label for="raza">Raza <span class="opt">(opcional)</span></label>
+              <select id="raza" name="raza">
+                <option value="">Sin raza definida / criollo</option>
+              </select>
+            </div>
+            <p class="hint">Colores — toca hasta 3. El primero que elijas es el principal.</p>
+            <div class="color-swatches" id="color-swatches"></div>
+            <p class="error" data-for="colores"></p>
+          </div>
         </div>
-        <div id="form-map" class="mini-map"></div>
-        <p class="hint">Arrastra el pin si no quedó en el lugar correcto.</p>
-        <p class="error" data-for="ubicacion"></p>
-      </div>
 
-      <button type="submit" class="submit-btn">Registrar perrito</button>
-      <p id="form-status" class="form-status" role="status"></p>
-    </form>
+        <div class="step">
+          <span class="step-num">4</span>
+          <div class="step-body">
+            <h3>¿Dónde lo viste?</h3>
+            <div class="location-controls">
+              <button type="button" id="btn-mi-ubicacion" class="ghost-btn">Usar mi ubicación</button>
+              <span id="coords-label" class="coords-label">Sin ubicación</span>
+            </div>
+            <div id="form-map" class="mini-map"></div>
+            <p class="hint">Toca el mapa para poner el pin. Arrástralo si no quedó exacto.</p>
+            <p class="error" data-for="ubicacion"></p>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Publicar ficha</button>
+        <p id="form-status" class="form-status" role="status"></p>
+      </form>
+
+      <!-- vista previa en vivo — solo visible en pantallas anchas,
+           se actualiza mientras se llena el formulario -->
+      <aside class="form-preview">
+        <span class="kicker">¿Me has visto?</span>
+        <div class="form-preview-photo" id="preview-photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+        <span class="preview-name" id="preview-name">Aún sin nombre</span>
+        <span class="preview-breed" id="preview-breed">—</span>
+        <div class="dot-row" id="preview-colors"></div>
+      </aside>
+    </div>
   </section>
 
   <!-- mapa -->
@@ -115,12 +138,42 @@
   <section id="view-detail" class="view">
     <div class="detail-header">
       <button id="back-to-list" class="ghost-btn">← Volver a la lista</button>
-      <button id="btn-eliminar" class="danger-btn">Eliminar registro</button>
+      <button id="btn-eliminar" class="danger-btn">Eliminar</button>
     </div>
     <div id="detail-content" class="detail-content"></div>
   </section>
 
 </main>
+
+<!-- diálogo de confirmación para eliminar (reemplaza confirm() del navegador) -->
+<div id="dialog-eliminar" class="dialog-backdrop" hidden>
+  <div class="dialog" role="dialog" aria-modal="true">
+    <div class="dialog-title" id="dialog-eliminar-titulo">¿Eliminar este registro?</div>
+    <div class="dialog-body">Se quita del mapa y de la lista para todos. No se puede deshacer.</div>
+    <div class="dialog-actions">
+      <button id="dialog-cancelar" class="ghost-btn">Cancelar</button>
+      <button id="dialog-confirmar" class="danger-btn">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- diálogo de cámara en vivo — usa getUserMedia() para pedir permiso
+     de cámara de verdad (funciona igual en laptop con webcam que en
+     celular con cámara trasera). Si el navegador no lo soporta o el
+     usuario niega el permiso, cae al input de archivo de respaldo. -->
+<div id="dialog-camara" class="dialog-backdrop" hidden>
+  <div class="dialog" role="dialog" aria-modal="true">
+    <div class="dialog-title">Toma la foto</div>
+    <div class="camera-video-wrap">
+      <video id="camera-video" playsinline autoplay muted></video>
+      <div class="camera-error" id="camera-error" hidden></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" id="camera-cancelar" class="ghost-btn">Cancelar</button>
+      <button type="button" id="camera-capturar" class="photo-btn">Capturar</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
