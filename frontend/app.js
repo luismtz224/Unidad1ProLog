@@ -1,10 +1,14 @@
 // DATOS DE EJEMPLO (MOCK) — reemplazar por fetch() al backend cuando exista pls
+// los nombres son los mismos que el catálogo de la tabla raza en la base de datos.
+// "Sin raza definida / criollo" no va aquí porque ya es la opción vacía del select
 const RAZAS = [
-  "Labrador", "Pastor Alemán", "Chihuahua", "Pitbull", "Schnauzer",
-  "Poodle", "Xoloitzcuintle", "Husky Siberiano", "Bulldog Francés", "Beagle"
+  "Labrador Retriever", "Pastor Alemán", "Chihuahua", "Xoloitzcuintle", "Schnauzer",
+  "Pitbull / Terrier americano", "Husky Siberiano", "Salchicha (Dachshund)",
+  "Poodle / Caniche", "Border Collie"
 ];
 
-// cada color trae su hex real para pintar los círculos de las fichas
+// cada color trae su hex real para pintar los círculos de las fichas.
+// los nombres son los mismos que el catálogo de la tabla color en la base de datos
 const COLORES = [
   { nombre: "Negro", hex: "#2b2623" },
   { nombre: "Blanco", hex: "#fbf8f2" },
@@ -15,7 +19,7 @@ const COLORES = [
   { nombre: "Manchado", hex: "radial-gradient(circle at 32% 34%,#2b2623 0 22%,transparent 23%),radial-gradient(circle at 70% 70%,#2b2623 0 17%,transparent 18%),#fbf8f2" },
   { nombre: "Crema", hex: "#ecd8b2" },
   { nombre: "Rojizo", hex: "#b0522a" },
-  { nombre: "Negro y blanco", hex: "linear-gradient(135deg,#2b2623 50%,#fbf8f2 50%)" }
+  { nombre: "Canela", hex: "#b8763a" }
 ];
 const HEX_POR_COLOR = Object.fromEntries(COLORES.map(c => [c.nombre, c.hex]));
 
@@ -39,9 +43,9 @@ let PERRITOS = [
     raza: "Xoloitzcuintle",
     colorPrincipal: "Café",
     coloresAdicionales: ["Blanco"],
-    lat: 25.4383, lng: -100.9737,
+    latitud: 25.4383, longitud: -100.9737,
     foto: null,
-    fecha: "2026-09-20T10:00:00"
+    fecha_registro: "2026-09-20T10:00:00"
   },
   {
     id: "mock-2",
@@ -49,9 +53,9 @@ let PERRITOS = [
     raza: "Pastor Alemán",
     colorPrincipal: "Negro",
     coloresAdicionales: ["Café"],
-    lat: 25.4295, lng: -100.9855,
+    latitud: 25.4295, longitud: -100.9855,
     foto: null,
-    fecha: "2026-09-21T15:30:00"
+    fecha_registro: "2026-09-21T15:30:00"
   },
   {
     id: "mock-3",
@@ -59,9 +63,9 @@ let PERRITOS = [
     raza: null,
     colorPrincipal: "Crema",
     coloresAdicionales: [],
-    lat: 25.4210, lng: -101.0120,
+    latitud: 25.4210, longitud: -101.0120,
     foto: null,
-    fecha: "2026-09-22T08:10:00"
+    fecha_registro: "2026-09-22T08:10:00"
   },
   {
     id: "mock-4",
@@ -69,9 +73,9 @@ let PERRITOS = [
     raza: "Chihuahua",
     colorPrincipal: "Dorado",
     coloresAdicionales: ["Blanco"],
-    lat: 25.4455, lng: -100.9950,
+    latitud: 25.4455, longitud: -100.9950,
     foto: null,
-    fecha: "2026-09-18T12:00:00"
+    fecha_registro: "2026-09-18T12:00:00"
   },
   {
     id: "mock-5",
@@ -79,9 +83,9 @@ let PERRITOS = [
     raza: "Schnauzer",
     colorPrincipal: "Gris",
     coloresAdicionales: [],
-    lat: 25.4150, lng: -100.9900,
+    latitud: 25.4150, longitud: -100.9900,
     foto: null,
-    fecha: "2026-09-15T09:45:00"
+    fecha_registro: "2026-09-15T09:45:00"
   },
   {
     id: "mock-6",
@@ -89,9 +93,9 @@ let PERRITOS = [
     raza: null,
     colorPrincipal: "Manchado",
     coloresAdicionales: [],
-    lat: 25.4330, lng: -101.0230,
+    latitud: 25.4330, longitud: -101.0230,
     foto: null,
-    fecha: "2026-09-19T18:20:00"
+    fecha_registro: "2026-09-19T18:20:00"
   }
 ];
 
@@ -268,14 +272,15 @@ let formMarker = null;
 let ubicacionSeleccionada = null;
 
 function colocarPin(lat, lng) {
-  ubicacionSeleccionada = { lat, lng };
+  // las llaves se llaman igual que las columnas de la tabla perrito (latitud y longitud)
+  ubicacionSeleccionada = { latitud: lat, longitud: lng };
   if (formMarker) {
     formMarker.setLatLng([lat, lng]);
   } else {
     formMarker = L.marker([lat, lng], { draggable: true }).addTo(formMap);
     formMarker.on("dragend", () => {
       const pos = formMarker.getLatLng();
-      ubicacionSeleccionada = { lat: pos.lat, lng: pos.lng };
+      ubicacionSeleccionada = { latitud: pos.lat, longitud: pos.lng };
       actualizarCoordsLabel();
     });
   }
@@ -286,7 +291,7 @@ function colocarPin(lat, lng) {
 function actualizarCoordsLabel() {
   const label = document.getElementById("coords-label");
   if (!ubicacionSeleccionada) { label.textContent = "Sin ubicación"; return; }
-  label.textContent = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
+  label.textContent = `${ubicacionSeleccionada.latitud.toFixed(5)}, ${ubicacionSeleccionada.longitud.toFixed(5)}`;
 }
 
 formMap.on("click", e => colocarPin(e.latlng.lat, e.latlng.lng));
@@ -312,7 +317,7 @@ function renderizarMapaCompleto() {
     if (layer instanceof L.Marker) fullMap.removeLayer(layer);
   });
   PERRITOS.forEach(p => {
-    const marker = L.marker([p.lat, p.lng]).addTo(fullMap);
+    const marker = L.marker([p.latitud, p.longitud]).addTo(fullMap);
     const colores = [p.colorPrincipal, ...p.coloresAdicionales].join(", ");
     marker.bindPopup(`<strong>${escapeHtml(p.nombre)}</strong><br>${escapeHtml(colores)}`);
   });
@@ -464,7 +469,7 @@ function validarFormulario() {
 // IDEMPOTENCIA: Se genera UNA vez al cargar el formulario.
 // si el usuario envía dos veces, se manda la misma clave
 // y el backend debe devolver el mismo registro sin duplicar
-let idempotencyKey = crypto.randomUUID();
+let claveIdempotencia = crypto.randomUUID();
 
 // submit del formulario
 document.getElementById("dog-form").addEventListener("submit", async e => {
@@ -479,14 +484,17 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
     return;
   }
 
+  // las llaves clave_idempotencia, nombre, latitud y longitud se llaman igual
+  // que las columnas de la tabla perrito. raza y colores se mandan con su
+  // nombre; el backend se encarga de buscar los ids (raza_id, color_id)
   const registro = {
-    idempotencyKey,
+    clave_idempotencia: claveIdempotencia,
     nombre: document.getElementById("nombre").value.trim(),
     raza: document.getElementById("raza").value || null,
     colorPrincipal: coloresElegidos[0],
     coloresAdicionales: coloresElegidos.slice(1),
-    lat: ubicacionSeleccionada.lat,
-    lng: ubicacionSeleccionada.lng,
+    latitud: ubicacionSeleccionada.latitud,
+    longitud: ubicacionSeleccionada.longitud,
     foto: fotoDataUrl
   };
 
@@ -498,16 +506,18 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // });
   // const data = await res.json();
 
+  // fecha_registro no se manda: en la base de datos la pone sola (DEFAULT
+  // CURRENT_TIMESTAMP). aquí la inventamos solo porque no hay backend todavía
   PERRITOS.push({
-    id: registro.idempotencyKey,
+    id: registro.clave_idempotencia,
     nombre: registro.nombre,
     raza: registro.raza,
     colorPrincipal: registro.colorPrincipal,
     coloresAdicionales: registro.coloresAdicionales,
-    lat: registro.lat,
-    lng: registro.lng,
+    latitud: registro.latitud,
+    longitud: registro.longitud,
     foto: registro.foto,
-    fecha: new Date().toISOString()
+    fecha_registro: new Date().toISOString()
   });
 
   status.textContent = `${registro.nombre} fue registrado correctamente.`;
@@ -522,7 +532,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   if (formMarker) { formMap.removeLayer(formMarker); formMarker = null; }
   actualizarCoordsLabel();
   actualizarPreview();
-  idempotencyKey = crypto.randomUUID(); // nueva clave para el siguiente registro
+  claveIdempotencia = crypto.randomUUID(); // nueva clave para el siguiente registro
   renderizarMapaCompleto();
   renderizarTicker();
 });
@@ -552,7 +562,7 @@ function renderizarLista() {
         ${p.foto
           ? `<img src="${p.foto}" alt="" />`
           : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
-        <span class="seen-tag">Visto ${cuando(p.fecha)}</span>
+        <span class="seen-tag">Visto ${cuando(p.fecha_registro)}</span>
       </div>
       <div class="dog-card-body">
         <div class="name">${escapeHtml(p.nombre)}</div>
@@ -590,7 +600,7 @@ function mostrarDetalle(id) {
         <span class="tag"><span class="swatch-dot" style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>${escapeHtml(c)}</span>
       `).join("")}
     </div>
-    <p class="hint" style="margin-top:16px">Visto ${cuando(p.fecha)}</p>
+    <p class="hint" style="margin-top:16px">Visto ${cuando(p.fecha_registro)}</p>
   `;
   irAVista("detail");
 }
