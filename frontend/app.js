@@ -36,68 +36,7 @@ const TINTES = [
   { bg: "#ddd5c4", ink: "#474138" }
 ];
 
-let PERRITOS = [
-  {
-    id: "mock-1",
-    nombre: "Canela",
-    raza: "Xoloitzcuintle",
-    colorPrincipal: "Café",
-    coloresAdicionales: ["Blanco"],
-    latitud: 25.4383, longitud: -100.9737,
-    foto: null,
-    fecha_registro: "2026-09-20T10:00:00"
-  },
-  {
-    id: "mock-2",
-    nombre: "Rocky",
-    raza: "Pastor Alemán",
-    colorPrincipal: "Negro",
-    coloresAdicionales: ["Café"],
-    latitud: 25.4295, longitud: -100.9855,
-    foto: null,
-    fecha_registro: "2026-09-21T15:30:00"
-  },
-  {
-    id: "mock-3",
-    nombre: "Luna",
-    raza: null,
-    colorPrincipal: "Crema",
-    coloresAdicionales: [],
-    latitud: 25.4210, longitud: -101.0120,
-    foto: null,
-    fecha_registro: "2026-09-22T08:10:00"
-  },
-  {
-    id: "mock-4",
-    nombre: "Chispa",
-    raza: "Chihuahua",
-    colorPrincipal: "Dorado",
-    coloresAdicionales: ["Blanco"],
-    latitud: 25.4455, longitud: -100.9950,
-    foto: null,
-    fecha_registro: "2026-09-18T12:00:00"
-  },
-  {
-    id: "mock-5",
-    nombre: "Toby",
-    raza: "Schnauzer",
-    colorPrincipal: "Gris",
-    coloresAdicionales: [],
-    latitud: 25.4150, longitud: -100.9900,
-    foto: null,
-    fecha_registro: "2026-09-15T09:45:00"
-  },
-  {
-    id: "mock-6",
-    nombre: "Manchas",
-    raza: null,
-    colorPrincipal: "Manchado",
-    coloresAdicionales: [],
-    latitud: 25.4330, longitud: -101.0230,
-    foto: null,
-    fecha_registro: "2026-09-19T18:20:00"
-  }
-];
+let PERRITOS = [];
 
 // fecha relativa tipo "hace 2 días" para las fichas y el detalle
 function cuando(iso) {
@@ -111,7 +50,7 @@ function cuando(iso) {
 // tinte determinístico por id, así la misma ficha siempre sale del
 // mismo color aunque se vuelva a dibujar la lista
 function tintePara(id) {
-  const suma = [...id].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const suma = [...String(id)].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   return TINTES[suma % TINTES.length];
 }
 
@@ -506,19 +445,39 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // });
   // const data = await res.json();
 
+    const res = await fetch("http://localhost:8000/api/perritos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(registro)
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    status.textContent = error.detail || "No se pudo registrar. Intenta de nuevo.";
+    status.classList.add("err");
+    return;
+  }
+
+  const nuevo = await res.json();
+  PERRITOS.push(nuevo);
+
+  renderizarLista();
+  renderizarMapaCompleto();
+  renderizarTicker();
+
   // fecha_registro no se manda: en la base de datos la pone sola (DEFAULT
   // CURRENT_TIMESTAMP). aquí la inventamos solo porque no hay backend todavía
-  PERRITOS.push({
-    id: registro.clave_idempotencia,
-    nombre: registro.nombre,
-    raza: registro.raza,
-    colorPrincipal: registro.colorPrincipal,
-    coloresAdicionales: registro.coloresAdicionales,
-    latitud: registro.latitud,
-    longitud: registro.longitud,
-    foto: registro.foto,
-    fecha_registro: new Date().toISOString()
-  });
+  //PERRITOS.push({
+    //id: registro.clave_idempotencia,
+    //nombre: registro.nombre,
+    //raza: registro.raza,
+    //colorPrincipal: registro.colorPrincipal,
+    //coloresAdicionales: registro.coloresAdicionales,
+    //latitud: registro.latitud,
+    //longitud: registro.longitud,
+    //foto: registro.foto,
+    //fecha_registro: new Date().toISOString()
+  //});
 
   status.textContent = `${registro.nombre} fue registrado correctamente.`;
   status.classList.add("ok");
@@ -538,6 +497,42 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
 });
 
 // LISTA Y DETALLE
+
+async function cargarPerritos() {
+    try {
+      const res = await fetch("http://localhost:8000/api/perritos/");
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      PERRITOS = data;
+
+      renderizarLista();
+      renderizarMapaCompleto();
+      renderizarTicker();
+
+    } catch (error) {
+      console.error("Error al cargar los perritos:", error);
+
+      const ul = document.getElementById("dog-list");
+
+      ul.innerHTML = `
+        <li class="empty-state">
+          No se pudieron cargar los perritos registrados.
+        </li>
+      `;
+    }
+  }
+
+function getFotoUrl(foto) {
+  if (!foto) return "";
+  if (foto.startsWith("data:") || foto.startsWith("http")) return foto;
+  return "http://localhost:8000" + foto;
+}
+
 function renderizarLista() {
   const ul = document.getElementById("dog-list");
   ul.innerHTML = "";
@@ -558,7 +553,7 @@ function renderizarLista() {
     li.innerHTML = `
       <div class="dog-photo">
         ${p.foto
-          ? `<img src="${p.foto}" alt="" />`
+          ? `<img src="${getFotoUrl(p.foto)}" alt="" />`
           : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
         <span class="seen-tag">Visto ${cuando(p.fecha_registro)}</span>
       </div>
@@ -588,7 +583,7 @@ function mostrarDetalle(id) {
   cont.innerHTML = `
     <div class="detail-photo" style="--tint-bg:${tinte.bg};--tint-ink:${tinte.ink}">
       ${p.foto
-        ? `<img src="${p.foto}" alt="Foto de ${escapeHtml(p.nombre)}" />`
+        ? `<img src="${getFotoUrl(p.foto)}" alt="Foto de ${escapeHtml(p.nombre)}" />`
         : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
     </div>
     <h2>${escapeHtml(p.nombre)}</h2>
@@ -620,15 +615,25 @@ document.getElementById("dialog-cancelar").addEventListener("click", () => {
   dialogEliminar.hidden = true;
 });
 
-document.getElementById("dialog-confirmar").addEventListener("click", () => {
-  PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
-  currentDetailId = null;
-  dialogEliminar.hidden = true;
-  renderizarMapaCompleto();
-  renderizarTicker();
-  irAVista("list");
+document.getElementById("dialog-confirmar").addEventListener("click", async () => {
+  try {
+    const res = await fetch(`http://localhost:8000/api/perritos/${currentDetailId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("No se pudo eliminar");
+    
+    PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
+    currentDetailId = null;
+    dialogEliminar.hidden = true;
+    renderizarMapaCompleto();
+    renderizarTicker();
+    irAVista("list");
+  } catch (error) {
+    console.error(error);
+    alert("Hubo un error al eliminar.");
+  }
 });
 
 dialogEliminar.addEventListener("click", e => {
   if (e.target === dialogEliminar) dialogEliminar.hidden = true;
 });
+
+cargarPerritos();
