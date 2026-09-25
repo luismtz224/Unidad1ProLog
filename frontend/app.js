@@ -450,11 +450,24 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // });
   // const data = await res.json();
 
-    const res = await fetch(`${API_URL}/perritos`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(registro)
-  });
+  // la ruta del backend termina en "/" (/api/perritos/). sin esa barra
+  // FastAPI responde con una redirección 307 en lugar de atender la petición
+  let res;
+  try {
+    res = await fetch(`${API_URL}/perritos/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registro)
+    });
+  } catch (err) {
+    // fetch solo lanza error cuando ni siquiera pudo llegar al servidor
+    // (backend apagado, sin red, CORS bloqueado). la clave de idempotencia
+    // no se cambia, así el usuario puede reintentar con el mismo registro
+    console.error("No se pudo conectar con el backend:", err);
+    status.textContent = "No hay conexión con el servidor. Intenta de nuevo en un momento.";
+    status.classList.add("err");
+    return;
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
