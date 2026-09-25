@@ -3,7 +3,8 @@
 const API_BASE = "http://localhost:8000";
 const API_URL = `${API_BASE}/api`;
 
-// DATOS DE EJEMPLO (MOCK) — reemplazar por fetch() al backend cuando exista pls
+// CATÁLOGOS — copia de lo que hay en las tablas raza y color de la base de datos.
+// si se agrega o cambia una raza o un color en la base, hay que cambiarlo aquí también.
 // los nombres son los mismos que el catálogo de la tabla raza en la base de datos.
 // "Sin raza definida / criollo" no va aquí porque ya es la opción vacía del select
 const RAZAS = [
@@ -430,7 +431,8 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
 
   // las llaves clave_idempotencia, nombre, latitud y longitud se llaman igual
   // que las columnas de la tabla perrito. raza y colores se mandan con su
-  // nombre; el backend se encarga de buscar los ids (raza_id, color_id)
+  // nombre; el backend se encarga de buscar los ids (raza_id, color_id).
+  // fecha_registro y el id no se mandan: los pone la base de datos sola
   const registro = {
     clave_idempotencia: claveIdempotencia,
     nombre: document.getElementById("nombre").value.trim(),
@@ -441,14 +443,6 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
     longitud: ubicacionSeleccionada.longitud,
     foto: fotoDataUrl
   };
-
-  // reemplazar este bloque por fetch() al backend cuando exista xfavor
-  // const res = await fetch("/api/perritos", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(registro)
-  // });
-  // const data = await res.json();
 
   // la ruta del backend termina en "/" (/api/perritos/). sin esa barra
   // FastAPI responde con una redirección 307 en lugar de atender la petición
@@ -492,20 +486,6 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // cargarPerritos() también vuelve a dibujar la lista, el mapa y el ticker
   await cargarPerritos();
 
-  // fecha_registro no se manda: en la base de datos la pone sola (DEFAULT
-  // CURRENT_TIMESTAMP). aquí la inventamos solo porque no hay backend todavía
-  //PERRITOS.push({
-    //id: registro.clave_idempotencia,
-    //nombre: registro.nombre,
-    //raza: registro.raza,
-    //colorPrincipal: registro.colorPrincipal,
-    //coloresAdicionales: registro.coloresAdicionales,
-    //latitud: registro.latitud,
-    //longitud: registro.longitud,
-    //foto: registro.foto,
-    //fecha_registro: new Date().toISOString()
-  //});
-
   status.textContent = `${registro.nombre} fue registrado correctamente.`;
   status.classList.add("ok");
 
@@ -519,40 +499,32 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   actualizarCoordsLabel();
   actualizarPreview();
   claveIdempotencia = crypto.randomUUID(); // nueva clave para el siguiente registro
-  renderizarMapaCompleto();
-  renderizarTicker();
 });
 
 // LISTA Y DETALLE
 
+// pide la lista de perritos al backend y redibuja lista, mapa y ticker.
+// se llama al abrir la página y después de registrar un perrito
 async function cargarPerritos() {
-    try {
-      const res = await fetch(`${API_URL}/perritos/`);
+  try {
+    const res = await fetch(`${API_URL}/perritos/`);
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      PERRITOS = data;
-
-      renderizarLista();
-      renderizarMapaCompleto();
-      renderizarTicker();
-
-    } catch (error) {
-      console.error("Error al cargar los perritos:", error);
-
-      const ul = document.getElementById("dog-list");
-
-      ul.innerHTML = `
-        <li class="empty-state">
-          No se pudieron cargar los perritos registrados.
-        </li>
-      `;
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
     }
+
+    PERRITOS = await res.json();
+
+    renderizarLista();
+    renderizarMapaCompleto();
+    renderizarTicker();
+  } catch (error) {
+    console.error("Error al cargar los perritos:", error);
+
+    const ul = document.getElementById("dog-list");
+    ul.innerHTML = `<li class="empty-state">No se pudieron cargar los perritos registrados.</li>`;
   }
+}
 
 function getFotoUrl(foto) {
   if (!foto) return "";
@@ -627,9 +599,8 @@ function mostrarDetalle(id) {
   irAVista("detail");
 }
 
-// ELIMINAR— usa un diálogo propio en vez de confirm() del navegador. 
-// Por ahora solo quita del arreglo PERRITOS en memoria; cuando exista el backend:
-// await fetch(`/api/perritos/${currentDetailId}`, { method: "DELETE" });
+// ELIMINAR — usa un diálogo propio en vez de confirm() del navegador.
+// al confirmar se manda DELETE al backend y, si sale bien, se quita del arreglo PERRITOS
 const dialogEliminar = document.getElementById("dialog-eliminar");
 
 document.getElementById("btn-eliminar").addEventListener("click", () => {
@@ -648,7 +619,7 @@ document.getElementById("dialog-confirmar").addEventListener("click", async () =
   try {
     const res = await fetch(`${API_URL}/perritos/${currentDetailId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("No se pudo eliminar");
-    
+
     PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
     currentDetailId = null;
     dialogEliminar.hidden = true;
