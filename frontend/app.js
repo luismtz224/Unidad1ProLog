@@ -537,9 +537,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   renderizarTicker();
 });
 
-// ============================================================
 // LISTA Y DETALLE
-// ============================================================
 function renderizarLista() {
   const ul = document.getElementById("dog-list");
   ul.innerHTML = "";
