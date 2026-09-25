@@ -53,6 +53,15 @@ function cuando(iso) {
   return "el " + new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }
 
+// texto de la raza para mostrar en pantalla. en la base hay dos formas de
+// decir "sin raza": la raza queda en NULL (lo que guarda el formulario) o es
+// el renglón "Sin raza definida / criollo" del catálogo (lo que traen los
+// perritos de prueba). aquí las dos se ven igual
+function textoRaza(raza) {
+  if (!raza || raza === "Sin raza definida / criollo") return "Sin raza definida";
+  return raza;
+}
+
 // tinte determinístico por id, así la misma ficha siempre sale del
 // mismo color aunque se vuelva a dibujar la lista
 function tintePara(id) {
@@ -171,7 +180,7 @@ function actualizarPreview() {
   document.getElementById("preview-name").textContent = nombreVal || "Aún sin nombre";
 
   const razaVal = document.getElementById("raza").value;
-  document.getElementById("preview-breed").textContent = razaVal || "Sin raza definida";
+  document.getElementById("preview-breed").textContent = textoRaza(razaVal);
 
   const fotoCont = document.getElementById("preview-photo");
   if (fotoDataUrl) {
@@ -560,7 +569,7 @@ function renderizarLista() {
       </div>
       <div class="dog-card-body">
         <div class="name">${escapeHtml(p.nombre)}</div>
-        <div class="breed">${escapeHtml(p.raza || "Sin raza definida")}</div>
+        <div class="breed">${escapeHtml(textoRaza(p.raza))}</div>
         <div class="dot-row">
           ${[p.colorPrincipal, ...p.coloresAdicionales].map(c => `<span style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>`).join("")}
         </div>
@@ -588,7 +597,7 @@ function mostrarDetalle(id) {
         : `<span class="initial">${escapeHtml(p.nombre[0]?.toUpperCase() || "?")}</span>`}
     </div>
     <h2>${escapeHtml(p.nombre)}</h2>
-    <p class="breed">${escapeHtml(p.raza || "Sin raza definida / criollo")}</p>
+    <p class="breed">${escapeHtml(textoRaza(p.raza))}</p>
     <div class="tag-row">
       ${[p.colorPrincipal, ...p.coloresAdicionales].map(c => `
         <span class="tag"><span class="swatch-dot" style="background:${HEX_POR_COLOR[c] || '#ccc'}"></span>${escapeHtml(c)}</span>
