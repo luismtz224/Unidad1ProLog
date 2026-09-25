@@ -485,12 +485,12 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
     return;
   }
 
-  const nuevo = await res.json();
-  PERRITOS.push(nuevo);
-
-  renderizarLista();
-  renderizarMapaCompleto();
-  renderizarTicker();
+  // en vez de agregar el perrito a mano en el arreglo, se vuelve a pedir la
+  // lista completa al backend: así el orden (lo más nuevo primero) y los datos
+  // son siempre los de la base, y si la clave de idempotencia ya existía
+  // no queda el mismo perrito repetido en pantalla.
+  // cargarPerritos() también vuelve a dibujar la lista, el mapa y el ticker
+  await cargarPerritos();
 
   // fecha_registro no se manda: en la base de datos la pone sola (DEFAULT
   // CURRENT_TIMESTAMP). aquí la inventamos solo porque no hay backend todavía
