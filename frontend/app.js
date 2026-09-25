@@ -471,7 +471,16 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    status.textContent = error.detail || "No se pudo registrar. Intenta de nuevo.";
+    // el backend manda "detail" de dos formas: en los errores 400 es un
+    // texto listo para mostrar, pero en los 422 (datos que no cumplen el
+    // esquema) es una lista de objetos y se vería como [object Object]
+    if (typeof error.detail === "string") {
+      status.textContent = error.detail;
+    } else if (Array.isArray(error.detail)) {
+      status.textContent = "Los datos del formulario no son válidos. Revísalos e intenta de nuevo.";
+    } else {
+      status.textContent = "No se pudo registrar. Intenta de nuevo.";
+    }
     status.classList.add("err");
     return;
   }
