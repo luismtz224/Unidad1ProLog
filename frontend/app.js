@@ -1,3 +1,8 @@
+// dirección del backend (FastAPI). si el servidor cambia de puerto o de
+// máquina, solo se cambia aquí y todos los fetch() lo siguen
+const API_BASE = "http://localhost:8000";
+const API_URL = `${API_BASE}/api`;
+
 // DATOS DE EJEMPLO (MOCK) — reemplazar por fetch() al backend cuando exista pls
 // los nombres son los mismos que el catálogo de la tabla raza en la base de datos.
 // "Sin raza definida / criollo" no va aquí porque ya es la opción vacía del select
@@ -445,7 +450,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // });
   // const data = await res.json();
 
-    const res = await fetch("http://localhost:8000/api/perritos", {
+    const res = await fetch(`${API_URL}/perritos`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(registro)
@@ -500,7 +505,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
 
 async function cargarPerritos() {
     try {
-      const res = await fetch("http://localhost:8000/api/perritos/");
+      const res = await fetch(`${API_URL}/perritos/`);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
@@ -530,7 +535,9 @@ async function cargarPerritos() {
 function getFotoUrl(foto) {
   if (!foto) return "";
   if (foto.startsWith("data:") || foto.startsWith("http")) return foto;
-  return "http://localhost:8000" + foto;
+  // el backend manda la ruta relativa ("/api/imagenes/xxx.jpg"), aquí se
+  // le pega la dirección del servidor para que el <img> la pueda cargar
+  return API_BASE + foto;
 }
 
 function renderizarLista() {
@@ -617,7 +624,7 @@ document.getElementById("dialog-cancelar").addEventListener("click", () => {
 
 document.getElementById("dialog-confirmar").addEventListener("click", async () => {
   try {
-    const res = await fetch(`http://localhost:8000/api/perritos/${currentDetailId}`, { method: "DELETE" });
+    const res = await fetch(`${API_URL}/perritos/${currentDetailId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("No se pudo eliminar");
     
     PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
