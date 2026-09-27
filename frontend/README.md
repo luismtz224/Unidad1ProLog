@@ -49,11 +49,16 @@ los dos del puerto 5500.
 La dirección del backend está en dos constantes al inicio de `app.js`:
 
 ```js
-const API_BASE = "http://localhost:8000";
+const API_BASE = `http://${window.location.hostname}:8000`;
 const API_URL = `${API_BASE}/api`;
 ```
 
-Si el backend cambia de puerto o de máquina, es el único lugar que se modifica.
+`API_BASE` toma el mismo host con el que se abrió la página (`localhost`,
+`127.0.0.1` o una IP de red local) en vez de tener `"localhost"` fijo, para
+que funcione igual desde la compu que desde el celular (ver la sección
+"Probarlo desde el celular" en el `README.md` de la raíz). Si el backend
+cambia de puerto, solo se cambia el `8000` de aquí.
+
 Las peticiones que usa el frontend son:
 
 | Acción | Petición |
