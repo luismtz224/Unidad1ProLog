@@ -19,6 +19,8 @@ class PerritoIn(BaseModel):
     def nombre_no_vacio(cls, v):
         if not v.strip():
             raise ValueError("El nombre no puede estar vacío")
+        if len(v) > 100:
+            raise ValueError("El nombre no puede tener más de 100 caracteres")
         return v.strip()
 
     @field_validator("colorPrincipal")
@@ -33,4 +35,18 @@ class PerritoIn(BaseModel):
     def maximo_dos_adicionales(cls, v):
         if len(v) > 2:
             raise ValueError("Máximo 3 colores en total (1 principal + 2 adicionales)")
+        return v
+
+    @field_validator("latitud")
+    @classmethod
+    def lat_en_rango(cls, v):
+        if not -90 <= v <= 90:
+            raise ValueError("Latitud fuera de rango")
+        return v
+
+    @field_validator("longitud")
+    @classmethod
+    def lng_en_rango(cls, v):
+        if not -180 <= v <= 180:
+            raise ValueError("Longitud fuera de rango")
         return v
