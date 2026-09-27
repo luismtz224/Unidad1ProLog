@@ -1,6 +1,9 @@
-// dirección del backend (FastAPI). si el servidor cambia de puerto o de
-// máquina, solo se cambia aquí y todos los fetch() lo siguen
-const API_BASE = "http://localhost:8000";
+// dirección del backend (FastAPI). usa el mismo host con el que se abrió
+// esta página (localhost, 127.0.0.1 o la IP de la red local) en vez de
+// "localhost" fijo, para que funcione igual en la compu que en el
+// celular conectado por wifi. si el backend cambia de puerto, solo se
+// cambia el 8000 de aquí abajo
+const API_BASE = `http://${window.location.hostname}:8000`;
 const API_URL = `${API_BASE}/api`;
 
 // CATÁLOGOS — copia de lo que hay en las tablas raza y color de la base de datos.
