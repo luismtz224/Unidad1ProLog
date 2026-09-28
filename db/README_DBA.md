@@ -81,7 +81,7 @@ JOIN, y las dos de agregación.
 |---|---|---|
 | Error de CORS en el navegador, aunque el backend esté corriendo | Se dejó el placeholder (`pon_aqui_una_contraseña_real`) en `DATABASE_URL` sin reemplazar por la contraseña real | Editar el `.env` con la contraseña real y reiniciar el backend |
 | Los perritos cargan pero sin foto | No se copiaron las fotos de `fotos_prueba/` a la carpeta que apunta `RUTA_IMAGENES` | Correr `cp fotos_prueba/*.jpg "$RUTA_IMAGENES"` (crear la carpeta primero si no existe) |
-| Desde el celular no carga la lista de perritos, aunque desde la compu sí | El frontend tiene la URL del backend fija a `localhost`, que en el celular no apunta a la compu | Cambiar esa URL a la IP local de la compu (ej. `192.168.0.14`), o hacerla configurable |
+| Desde el celular no carga nada, aunque desde la compu sí | El backend no está corriendo con `--host 0.0.0.0`, o `CORS_ORIGINS` no incluye la IP local vista desde el celular | Reiniciar el backend con `--host 0.0.0.0` y agregar esa IP a `CORS_ORIGINS` en el `.env` |
 
 ## Reglas que valida el backend, no la base
 
