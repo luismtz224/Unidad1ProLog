@@ -251,7 +251,3 @@ Errores:
 **Orientado a objetos (backend):** los datos se modelan con clases. En `Backend/app/models.py`, `Raza`, `Color`, `Perrito` y `PerritoColor` son clases de SQLAlchemy mapeadas a las tablas, con relaciones (`relationship`) y borrado en cascada de los colores de un perrito. En `Backend/app/schemas.py`, `PerritoIn` es una clase de Pydantic que define la forma del cuerpo del `POST` y encapsula sus validaciones (`@field_validator`).
 
 **Imperativo (backend):** el flujo paso a paso de `registrar` (buscar, validar, insertar, confirmar la transacción) y de `guardar_foto_base64` en `Backend/app/services/imagen.py` (decodificar el base64, verificar la imagen con Pillow, generar un nombre con UUID y escribir el archivo en disco) son secuencias de instrucciones con condicionales que modifican estado.
-
-## 12. Despliegue (punto extra)
-
-[PENDIENTE - si el equipo va por el punto extra: dónde correría cada pieza, HTTPS, variables de producción, puertos, respaldo, systemd + nginx/Caddy]
