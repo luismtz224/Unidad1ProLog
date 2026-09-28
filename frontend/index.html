@@ -176,6 +176,10 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js"></script>
+<!-- ?v=2 evita que Safari en el celular se quede con una copia vieja de
+     app.js en caché (el servidor de pruebas no manda Cache-Control).
+     Subir este número cada vez que se cambie app.js y se vaya a
+     probar de nuevo desde el celular. -->
+<script src="app.js?v=5"></script>
 </body>
 </html>

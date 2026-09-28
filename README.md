@@ -131,6 +131,8 @@ Para probarlo desde un celular (iPhone, Android) conectado a la **misma red WiFi
 
 Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respaldo) haría falta un túnel o certificado — ver sección 12 (Despliegue).
 
+**Nota — idempotencia sin HTTPS:** `crypto.randomUUID()` tampoco existe en un origen no seguro. El frontend usa una función `generarUUID()` con respaldo (arma el UUID a mano si `crypto.randomUUID` no está disponible), así que registrar un perrito funciona igual por `http://` desde el celular.
+
 ## 8. Endpoints de la API
 
 [PENDIENTE - Backend: lista completa de endpoints]

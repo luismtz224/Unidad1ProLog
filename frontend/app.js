@@ -423,10 +423,23 @@ function validarFormulario() {
   return valido;
 }
 
+// crypto.randomUUID() no existe en contextos no seguros (http:// que no
+// sea localhost, como al probar desde el celular por IP local) — con
+// este fallback se arma un UUID v4 a mano en vez de tronar el script
+function generarUUID() {
+  if (window.crypto && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 // IDEMPOTENCIA: Se genera UNA vez al cargar el formulario.
 // si el usuario envía dos veces, se manda la misma clave
 // y el backend debe devolver el mismo registro sin duplicar
-let claveIdempotencia = crypto.randomUUID();
+let claveIdempotencia = generarUUID();
 
 // submit del formulario
 document.getElementById("dog-form").addEventListener("submit", async e => {
@@ -510,7 +523,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   if (formMarker) { formMap.removeLayer(formMarker); formMarker = null; }
   actualizarCoordsLabel();
   actualizarPreview();
-  claveIdempotencia = crypto.randomUUID(); // nueva clave para el siguiente registro
+  claveIdempotencia = generarUUID(); // nueva clave para el siguiente registro
 });
 
 // LISTA Y DETALLE
