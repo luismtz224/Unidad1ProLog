@@ -205,7 +205,11 @@ Errores:
 
 ## 9. Capturas de pantalla
 
-[PENDIENTE - Frontend: agregar capturas reales del formulario, el mapa y la lista, ya con datos de prueba corriendo contra la base y el backend, antes de la entrega]
+<img width="1920" height="1080" alt="{CB8E83FA-5914-4D2D-8C04-CCB65AAC3F1E}" src="https://github.com/user-attachments/assets/e6b5b99f-40a8-48a4-a250-80cc36a93957" />
+<img width="1920" height="1080" alt="{9F0A0612-3DDD-46BF-85CD-8CE94C2CFB46}" src="https://github.com/user-attachments/assets/b2edac4c-5fbc-450f-9bdd-606e61723c6e" />
+<img width="1920" height="1080" alt="{7114D974-E4BB-4CB8-8FD7-6225EE23B173}" src="https://github.com/user-attachments/assets/3163a814-059a-4b36-b00c-cc1ae94fef9d" />
+<img width="1920" height="1080" alt="{22FED340-1A8F-461E-8366-AB8DF30FC9C0}" src="https://github.com/user-attachments/assets/b2231804-b2bd-49b1-bd7b-4a4b85aba0d2" />
+<img width="1920" height="1080" alt="{1E95F26C-5926-438A-8D26-4EC4C40FC02C}" src="https://github.com/user-attachments/assets/4246aba6-7c5d-4d4c-b3e4-95894b18733f" />
 
 ## 10. Problemas comunes y cómo resolverlos
 
