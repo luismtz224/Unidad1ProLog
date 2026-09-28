@@ -161,7 +161,7 @@ Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respald
 
 [PENDIENTE - Backend: explicar cómo usa esa clave antes de insertar (dónde está ese código, qué hace exactamente)]
 
-**Dónde se genera la clave de idempotencia (frontend):** en `frontend/app.js`, la variable `claveIdempotencia` se llena con `crypto.randomUUID()` en cuanto carga la página, y se manda tal cual en el `POST` de cada intento de registro. Solo se rota (se genera una nueva) después de que el registro se guarda con éxito — así, si el mismo formulario se reenvía por un doble tap o un reintento de conexión, viaja la misma clave y el backend lo detecta como el mismo intento.
+**Dónde se genera la clave de idempotencia (frontend):** en `frontend/app.js`, la variable `claveIdempotencia` se llena con `generarUUID()` en cuanto carga la página, y se manda tal cual en el `POST` de cada intento de registro. `generarUUID()` usa `crypto.randomUUID()` cuando está disponible, y arma el UUID a mano si no (esa API no existe en orígenes no seguros, como al probar por `http://` desde el celular — ver sección 7). La clave solo se rota (se genera una nueva) después de que el registro se guarda con éxito — así, si el mismo formulario se reenvía por un doble tap o un reintento de conexión, viaja la misma clave y el backend lo detecta como el mismo intento.
 
 **Enfoque funcional (frontend):** varias partes usan `.map()`/`.filter()` en vez de ciclos `for`, por ejemplo: la lista de nombres del ticker animado, los círculos de color de cada ficha de perrito y del detalle, y quitar un perrito de la lista local tras eliminarlo (`PERRITOS.filter(x => x.id !== currentDetailId)`).
 
