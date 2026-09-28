@@ -7,7 +7,7 @@ Proyecto 1 — Programación lógica y funcional.
 | Nombre | Rol |
 |---|---|
 | Luis Fernando Martínez Muñiz | Frontend |
-| [Nombre] | Backend |
+| Ángel Imanol Velázquez Hernández | Backend |
 | Sofía Cortés | DBA |
 
 ## 2. Requisitos previos
@@ -86,12 +86,15 @@ El frontend no usa variables de entorno propias: la dirección del backend (`API
 **Backend:**
 ```bash
 cd Backend
+python -m venv
+pip install requeriments.txt
 uvicorn app.main:app --reload --port 8000
 ```
 Queda disponible en: `http://127.0.0.1:8000`
 
 **Frontend:**
 ```bash
+cd ..
 cd frontend
 python -m http.server 5500
 ```
@@ -135,7 +138,70 @@ Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respald
 
 ## 8. Endpoints de la API
 
-[PENDIENTE - Backend: lista completa de endpoints]
+Base: `http://127.0.0.1:8000`. Con el backend corriendo, la documentación interactiva (Swagger) queda en `http://127.0.0.1:8000/docs`.
+
+| Método | Ruta | Descripción | Respuestas |
+| ------ | ---- | ----------- | ---------- |
+| GET | `/health` | Comprueba que el backend está vivo | 200 `{"status": "ok"}` |
+| GET | `/api/razas` | Nombres de las razas del catálogo (no incluye "Sin raza definida / criollo": en el formulario esa opción es el valor vacío) | 200 lista de strings |
+| GET | `/api/colores` | Nombres de los colores del catálogo | 200 lista de strings |
+| GET | `/api/perritos/` | Todos los perritos, del más reciente al más antiguo | 200 lista de perritos |
+| GET | `/api/perritos/{id}` | Detalle de un perrito | 200 · 404 si no existe |
+| POST | `/api/perritos/` | Registra un perrito (idempotente, ver abajo) | 200 · 400 · 422 |
+| DELETE | `/api/perritos/{id}` | Elimina el perrito y sus colores asociados | 200 `{"ok": true}` · 404 |
+| GET | `/api/imagenes/{nombre_archivo}` | Devuelve la foto guardada en `RUTA_IMAGENES` | 200 imagen · 404 |
+
+Usa siempre la barra final en `/api/perritos/`: sin ella FastAPI responde con una redirección 307.
+
+### POST `/api/perritos/`
+
+Cuerpo (JSON):
+
+```json
+{
+  "clave_idempotencia": "3f9c1c2e-6f0b-4c53-9d0a-2b6a8f6a1e11",
+  "nombre": "Firulais",
+  "raza": "Labrador Retriever",
+  "colorPrincipal": "Canela",
+  "coloresAdicionales": ["Blanco"],
+  "latitud": 19.4326,
+  "longitud": -99.1332,
+  "foto": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+}
+```
+
+Respuesta (misma forma que devuelven los GET de perritos):
+
+```json
+{
+  "id": 16,
+  "nombre": "Firulais",
+  "raza": "Labrador Retriever",
+  "colorPrincipal": "Canela",
+  "coloresAdicionales": ["Blanco"],
+  "latitud": 19.4326,
+  "longitud": -99.1332,
+  "foto": "/api/imagenes/8f1d0c5a2b7e4c1f9a3d6e0b4c2a1f7d.jpg",
+  "fecha_registro": "2026-09-28T14:30:00"
+}
+```
+
+Reglas:
+
+- `nombre` no puede ir vacío y `colorPrincipal` es obligatorio.
+- `raza` es opcional: `null` se guarda como `NULL`. Si viene, debe existir en el catálogo.
+- `coloresAdicionales` admite máximo 2 (3 colores en total) y no se puede repetir ningún color. Todos deben existir en el catálogo.
+- `foto` es una data URL en base64 (`data:image/...;base64,...`). El backend la abre con Pillow para comprobar que de verdad es una imagen y solo acepta JPG, PNG y WEBP. Se guarda en `RUTA_IMAGENES` con un nombre generado con UUID.
+- `latitud` y `longitud` deben estar en rango válido (latitud entre -90 y 90, longitud entre -180 y 180).
+- **Idempotencia:** si llega una `clave_idempotencia` que ya existe, no se crea nada nuevo: se responde 200 con el mismo registro (mismo `id`).
+
+Errores:
+
+| Código | Cuándo pasa |
+| ------ | ----------- |
+| 400 | Raza o color que no está en el catálogo, color repetido, foto ausente, foto que no es una imagen válida o formato no soportado |
+| 404 | Perrito o imagen inexistente |
+| 422 | El cuerpo no cumple el esquema (nombre vacío, más de 2 colores adicionales, campos faltantes o de tipo incorrecto) |
 
 ## 9. Capturas de pantalla
 
@@ -144,14 +210,21 @@ Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respald
 ## 10. Problemas comunes y cómo resolverlos
 
 | Problema | Solución |
-|---|---|
+| -------- | -------- |
 | Error de conexión a la base de datos | Verificar que `DATABASE_URL` en `.env` tenga el usuario, contraseña, host y nombre de base correctos, y que MySQL esté corriendo |
 | Falla al cargar los scripts `.sql` | Confirmar que se corrieron en orden: `01_schema.sql` → `02_catalogos.sql` → `03_datos_prueba.sql` |
 | El frontend abre pero la lista/mapa se quedan vacíos y no registra nada | Revisa la consola del navegador: si dice error de CORS o de conexión, confirma que el backend esté corriendo y que `CORS_ORIGINS` en el `.env` del backend incluya el origen exacto (protocolo + host + puerto) desde donde abriste el frontend |
-| Desde el celular no carga nada, aunque desde la compu sí | El backend debe correr con `--host 0.0.0.0` (no solo `127.0.0.1`) y el `.env` debe incluir la IP local del celular en `CORS_ORIGINS` — ver sección 7 |
+| Desde el celular no carga nada, aunque desde la compu sí | El backend debe correr con `--host 0.0.0.0` (no solo `127.0.0.1`) y el `.env` debe incluir la IP local de la compu en `CORS_ORIGINS` — ver sección 7 |
 | La cámara en vivo o "usar mi ubicación" no funcionan desde el celular | Es normal si se accede por `http://` y no por `localhost`: el navegador exige HTTPS para esas dos APIs. El sitio cae solo al respaldo (cámara nativa / pin manual) — ver sección 7 |
-
-[PENDIENTE - Backend: agregar sus propios casos comunes]
+| `ModuleNotFoundError: No module named 'app'` al correr `uvicorn` | Se está corriendo desde la carpeta equivocada. Entra a `Backend/` y ejecuta ahí `uvicorn app.main:app --reload --port 8000` |
+| Error de SQLAlchemy al arrancar (`Could not parse rfc1738 URL`, `NoneType`…) | `DATABASE_URL` está vacía o no se está leyendo. Revisa que exista el archivo `.env` (copiado de `.env.example`) y que la variable tenga valor |
+| `'cryptography' package is required for sha256_password or caching_sha2_password` | MySQL 8 usa ese método de autenticación y falta la librería. Corre `pip install -r requirements.txt` de nuevo |
+| Las fotos de los perritos de prueba no se ven (404 en `/api/imagenes/...`) | `RUTA_IMAGENES` debe apuntar a una carpeta que contenga los archivos. Copia ahí el contenido de `Backend/images/` (las fotos `perro_01.jpg` … `perro_15.jpg`) |
+| `POST /api/perritos` responde 307 o se pierde el cuerpo | La ruta está definida con barra final: usa `/api/perritos/` |
+| Al registrar sale "La raza '…' no existe en el catálogo" o "Color(es) no encontrados" | Los nombres que manda el frontend deben ser idénticos a los de las tablas `raza` y `color`. Confirma que `02_catalogos.sql` se corrió y que las listas del frontend no se desfasaron del catálogo |
+| Al registrar sale "El archivo no es una imagen válida" o "Formato no soportado" | Sube una foto JPG, PNG o WEBP real (no basta con renombrar la extensión: el backend la abre y la valida) |
+| Error 422 al registrar | El cuerpo no cumple el esquema: nombre vacío, más de 2 colores adicionales o campos faltantes. El detalle viene en la respuesta y en `/docs` |
+| `Address already in use` / el puerto 8000 está ocupado | Ya hay otro proceso en ese puerto. Ciérralo o arranca con otro puerto (`--port 8001`) y ajusta `API_BASE` y `CORS_ORIGINS` en consecuencia |
 
 ## 11. Paradigmas
 
@@ -159,13 +232,21 @@ Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respald
 
 **Idempotencia del registro (diseño de base de datos):** la tabla `perrito` tiene la columna `clave_idempotencia` como `UNIQUE`. Esto permite que, si el mismo formulario se envía dos veces con la misma clave, la base rechace el segundo intento de insertar un registro duplicado.
 
-[PENDIENTE - Backend: explicar cómo usa esa clave antes de insertar (dónde está ese código, qué hace exactamente)]
+**Idempotencia del registro (backend):** el código está en `Backend/app/routers/perritos.py`, función `registrar` (el `POST /api/perritos/`). Funciona en tres capas:
+
+1. Antes de insertar, busca un perrito con la misma `clave_idempotencia`. Si existe, devuelve ese mismo registro (mismo `id`) sin crear nada ni guardar otra foto.
+2. Si no existe, valida el cuerpo (raza, colores, foto) e inserta el perrito y sus filas de `perrito_color` en una sola transacción: `flush()` para obtener el `id`, luego los colores y al final `commit()`.
+3. Si dos envíos idénticos llegan casi al mismo tiempo y la restricción `UNIQUE` de la base rechaza al segundo (`IntegrityError`), hace `rollback()` y devuelve el registro del que ganó la carrera, en vez de un error de duplicado.
 
 **Dónde se genera la clave de idempotencia (frontend):** en `frontend/app.js`, la variable `claveIdempotencia` se llena con `generarUUID()` en cuanto carga la página, y se manda tal cual en el `POST` de cada intento de registro. `generarUUID()` usa `crypto.randomUUID()` cuando está disponible, y arma el UUID a mano si no (esa API no existe en orígenes no seguros, como al probar por `http://` desde el celular — ver sección 7). La clave solo se rota (se genera una nueva) después de que el registro se guarda con éxito — así, si el mismo formulario se reenvía por un doble tap o un reintento de conexión, viaja la misma clave y el backend lo detecta como el mismo intento.
 
 **Enfoque funcional (frontend):** varias partes usan `.map()`/`.filter()` en vez de ciclos `for`, por ejemplo: la lista de nombres del ticker animado, los círculos de color de cada ficha de perrito y del detalle, y quitar un perrito de la lista local tras eliminarlo (`PERRITOS.filter(x => x.id !== currentDetailId)`).
 
-[PENDIENTE - Backend: identificar los demás paradigmas usados (orientado a objetos, imperativo) y dónde está ese código]
+**Enfoque funcional (backend):** `serializar()` en `Backend/app/routers/perritos.py` convierte un perrito de la base en el diccionario de respuesta sin modificar nada. Se apoya en comprensiones de listas en lugar de ciclos: `[serializar(p) for p in perritos]`, `[r.nombre for r in razas]` (en `catalogos.py`) y los colores adicionales (`[pc.color.nombre for pc in p.colores if not pc.es_principal]`). Los colores repetidos se detectan comparando `len(set(nombres))` contra `len(nombres)`.
+
+**Orientado a objetos (backend):** los datos se modelan con clases. En `Backend/app/models.py`, `Raza`, `Color`, `Perrito` y `PerritoColor` son clases de SQLAlchemy mapeadas a las tablas, con relaciones (`relationship`) y borrado en cascada de los colores de un perrito. En `Backend/app/schemas.py`, `PerritoIn` es una clase de Pydantic que define la forma del cuerpo del `POST` y encapsula sus validaciones (`@field_validator`).
+
+**Imperativo (backend):** el flujo paso a paso de `registrar` (buscar, validar, insertar, confirmar la transacción) y de `guardar_foto_base64` en `Backend/app/services/imagen.py` (decodificar el base64, verificar la imagen con Pillow, generar un nombre con UUID y escribir el archivo en disco) son secuencias de instrucciones con condicionales que modifican estado.
 
 ## 12. Despliegue (punto extra)
 
