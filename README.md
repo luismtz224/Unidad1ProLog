@@ -221,7 +221,7 @@ Abre el `.env` con un editor de texto. Desde la terminal:
 **Windows (CMD o Git Bash):** `notepad .env`  
 **Linux:** `nano .env` (guardas con `Ctrl+O`, Enter, y sales con `Ctrl+X`)
 
-Deja **solo estas 4 líneas** (borra o ignora las que empiezan con `#`) y cambia lo que dice **← cambia esto**:
+Deja **solo estas 4 líneas** (borra o ignora las que empiezan con `#`). Si elegiste otra contraseña en el paso 3, cámbiala en `DATABASE_URL`; si usaste otras carpetas en el paso 6, cámbialas en `RUTA_IMAGENES` y `RUTA_RESPALDOS`:
 
 **Windows** (usa `/` en las rutas, **no** `\`, aunque estemos en Windows):
 ```
@@ -368,7 +368,7 @@ Para probarlo desde un celular (iPhone, Android) conectado a la **misma red WiFi
 - Si la cámara en vivo no abre, cae automáticamente al selector de archivo con `capture="environment"`, que en el celular abre la cámara nativa del sistema (esa sí funciona por HTTP).
 - Si "usar mi ubicación" falla, se puede poner el pin a mano tocando el mapa.
 
-Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respaldo) haría falta un túnel o certificado — ver sección 12 (Despliegue).
+Para tener HTTPS real (y que la cámara/ubicación funcionen sin caer al respaldo) haría falta un túnel o certificado (por ejemplo, un servicio de túnel HTTPS o un certificado propio); este proyecto no lo incluye.
 
 **Nota — idempotencia sin HTTPS:** `crypto.randomUUID()` tampoco existe en un origen no seguro. El frontend usa una función `generarUUID()` con respaldo (arma el UUID a mano si `crypto.randomUUID` no está disponible), así que registrar un perrito funciona igual por `http://` desde el celular.
 
@@ -452,6 +452,9 @@ Errores:
 | Problema | Solución |
 | -------- | -------- |
 | Error de conexión a la base de datos | Verificar que `DATABASE_URL` en `.env` tenga el usuario, contraseña, host y nombre de base correctos, y que MySQL esté corriendo |
+| `'mysql' no se reconoce como un comando` (CMD/Git Bash) | Falta agregar la carpeta `bin` de MySQL al PATH de Windows. Sigue "Agregar `mysql` al PATH" en la sección 2.2 y **abre una terminal nueva** después de guardar el cambio |
+| `Access denied for user 'perritos_app'` al arrancar el backend o en el paso 4 | El usuario no existe o la contraseña del `.env` no es la que pusiste en el paso 3. Repite el paso 3 (si el usuario ya existe, `DROP USER 'perritos_app'@'localhost';` y créalo otra vez) y revisa `DATABASE_URL` en el `.env` |
+| `Access denied for user 'root'` al correr los `.sql` | La contraseña de `root` es la que pusiste al instalar MySQL (sección 2.2). En Linux prueba con `sudo mysql < db/01_schema.sql` |
 | Falla al cargar los scripts `.sql` | Confirmar que se corrieron en orden: `01_schema.sql` → `02_catalogos.sql` → `03_datos_prueba.sql` |
 | El frontend abre pero la lista/mapa se quedan vacíos y no registra nada | Revisa la consola del navegador: si dice error de CORS o de conexión, confirma que el backend esté corriendo y que `CORS_ORIGINS` en el `.env` del backend incluya el origen exacto (protocolo + host + puerto) desde donde abriste el frontend |
 | Desde el celular no carga nada, aunque desde la compu sí | El backend debe correr con `--host 0.0.0.0` (no solo `127.0.0.1`) y el `.env` debe incluir la IP local de la compu en `CORS_ORIGINS` — ver sección 7 |
