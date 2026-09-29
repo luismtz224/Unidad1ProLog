@@ -12,95 +12,331 @@ Proyecto 1 — Programación lógica y funcional.
 
 ## 2. Requisitos previos
 
-| Herramienta | Versión |
-|---|---|
-| MySQL | 8.0+ |
-| Python | 3.14.x |
-| Un navegador moderno (Chrome, Firefox, Safari) y un servidor estático local (Live Server de VS Code, o `python -m http.server`) | — (el frontend es HTML/CSS/JS plano, no necesita instalar nada) |
+Necesitas instalar 3 cosas **antes** de tocar el proyecto. Si ya las tienes, salta a la sección 3.
 
-## 3. Instalación (pasos en orden)
+| Herramienta | Versión | Cómo comprobar que ya la tienes |
+|---|---|---|
+| Git | cualquiera | `git --version` |
+| Python | 3.14.x | `python --version` (en Linux/Mac suele ser `python3 --version`) |
+| MySQL Server | 8.0 o más nuevo | `mysql --version` |
+
+Además, un navegador moderno (Chrome, Firefox, Safari). El frontend es HTML/CSS/JS plano: no necesita instalar nada más.
+
+> **Ojo:** el proyecto usa **MySQL**, no PostgreSQL. Si ya tienes PostgreSQL instalado no sirve, hay que instalar MySQL aparte.
+
+### 2.1 Instalar Python
+
+- **Windows:** descarga el instalador desde https://www.python.org/downloads/. En la **primera pantalla** del instalador marca la casilla **"Add python.exe to PATH"** antes de darle "Install Now". Si se te pasó, vuelve a correr el instalador, elige "Modify" y márcala.
+- **Linux (Ubuntu/Debian):** `sudo apt install python3 python3-venv python3-pip`
+
+Cierra y vuelve a abrir la terminal y comprueba con `python --version`. Debe salir `Python 3.14.x`.
+
+### 2.2 Instalar MySQL
+
+**Windows:**
+
+1. Descarga **MySQL Installer** desde https://dev.mysql.com/downloads/installer/.
+2. En el instalador elige **"Server only"** (solo el servidor) y ve dando "Next".
+3. Cuando te pida la **contraseña de `root`**, escribe una que **no vayas a olvidar y anótala**: la vas a usar en la sección 4. Para un proyecto de clase puedes usar algo simple como `root1234`.
+4. Deja marcada la opción de iniciar MySQL como servicio de Windows y termina la instalación.
+
+**Windows — agregar `mysql` al PATH (paso que casi siempre falta):** el instalador **no** lo hace solo. Sin esto, CMD y Git Bash responden `'mysql' no se reconoce como un comando`.
+
+1. Busca en la carpeta `C:\Program Files\MySQL\MySQL Server 8.0\bin` (si instalaste otra versión, el número cambia: 8.4, 9.0…). Debe contener un archivo `mysql.exe`. Copia esa ruta.
+2. Presiona la tecla Windows y escribe **"Editar las variables de entorno del sistema"**, ábrelo.
+3. Botón **"Variables de entorno…"**.
+4. En la lista de arriba (variables de usuario) selecciona **`Path`** → **"Editar…"** → **"Nuevo"** → pega la ruta → **Aceptar** en todas las ventanas.
+5. **Cierra todas las terminales y abre una nueva** (si no, no toma el cambio).
+6. Comprueba: `mysql --version`. Debe salir algo como `mysql  Ver 8.0.xx`.
+
+**Linux (Ubuntu/Debian):**
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/luismtz224/Unidad1ProLog.git
-cd Unidad1ProLog
-
-# 2. Crear la base de datos (ver sección 4)
-
-# 3. Configurar variables de entorno (ver sección 5)
-
-# 4. Instalar y correr el backend
-cd Backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-
-# 5. Instalar y correr el frontend (no necesita instalar nada, es HTML/CSS/JS plano)
-cd frontend
-python -m http.server 5500
+sudo apt install mysql-server
+sudo systemctl start mysql
+mysql --version
 ```
+
+En Linux, `root` de MySQL normalmente entra con `sudo`: en la sección 4, donde dice `mysql -u root -p`, usa `sudo mysql` (no pedirá contraseña).
+
+**Mac:** `brew install mysql` y luego `brew services start mysql`.
+
+## 3. Antes de empezar: cómo usar esta guía
+
+- **Terminal:** en **Windows** usa **CMD** o **Git Bash** (no PowerShell: algunos comandos cambian). En Linux/Mac usa la terminal normal.
+- **Corre los comandos UNO POR UNO.** No copies y pegues todo el bloque de golpe: varios pasos dependen de que hayas escrito algo antes (por ejemplo, editar el `.env`). Copia una línea, pégala, dale Enter, mira que no haya error y hasta entonces sigue con la siguiente.
+- **Los comandos que cambian según el sistema** vienen separados en **Windows (CMD)**, **Windows (Git Bash)** y **Linux / Mac**. Usa solo el tuyo.
+- Los ✅ dicen **qué debes ver** si el paso salió bien. Si no lo ves, no sigas: ve a la sección 10.
+- Vas a necesitar **dos terminales abiertas al mismo tiempo** al final (una para el backend y otra para el frontend).
+
+**Mapa de la instalación:**
+
+1. Clonar el repositorio (esta sección)
+2. Crear la base de datos (sección 4)
+3. Configurar el `.env` y la carpeta de fotos (sección 5)
+4. Instalar y correr el backend, luego el frontend (sección 6)
+
+### Paso 1: Clonar el repositorio
+
+Abre la terminal en la carpeta donde quieras guardar el proyecto (por ejemplo, Documentos) y corre:
+
+```bash
+git clone https://github.com/luismtz224/Unidad1ProLog.git
+```
+```bash
+cd Unidad1ProLog
+```
+
+✅ Debes ver que la ruta de la terminal termina en `Unidad1ProLog`. **Esta carpeta es "la raíz del proyecto"**: todos los comandos de las secciones 4 y 5 se corren desde aquí. Si abres otra terminal más adelante, vuelve a entrar con `cd` a esta carpeta.
 
 ## 4. Creación de la base de datos y carga de datos
 
-Todo esto vive en la carpeta `db/`. Se corre en este orden:
+Todo esto vive en la carpeta `db/`. Corre los comandos **desde la raíz del proyecto** y **en este orden**. Cada uno te pide la contraseña de `root` (la que pusiste al instalar MySQL; al escribirla no se ve nada, es normal).
 
+### Paso 2: Crear la base, las tablas y los datos de prueba
+
+**Windows (CMD):**
+```bat
+mysql -u root -p < db\01_schema.sql
+```
+```bat
+mysql -u root -p < db\02_catalogos.sql
+```
+```bat
+mysql -u root -p < db\03_datos_prueba.sql
+```
+
+**Windows (Git Bash) / Linux / Mac:**
 ```bash
 mysql -u root -p < db/01_schema.sql
+```
+```bash
 mysql -u root -p < db/02_catalogos.sql
+```
+```bash
 mysql -u root -p < db/03_datos_prueba.sql
 ```
+(En Linux, si `root` no deja entrar con contraseña, usa `sudo mysql < db/01_schema.sql` y así con los otros dos.)
 
-Esto crea la base `perritos_calle`, sus 4 tablas (`raza`, `color`, `perrito`, `perrito_color`), carga el catálogo (11 razas, 10 colores) y 15 perritos de prueba con foto.
+✅ Si todo salió bien, **no imprime nada** y regresa al cursor. Si algo falla, MySQL lo avisa con un mensaje `ERROR`. Esto crea la base `perritos_calle`, sus 4 tablas (`raza`, `color`, `perrito`, `perrito_color`), carga el catálogo (11 razas, 10 colores) y 15 perritos de prueba con foto.
 
-(Opcional, recomendado) Crear un usuario de aplicación en vez de usar `root`:
-```sql
-CREATE USER 'perritos_app'@'%' IDENTIFIED BY 'una_contraseña_fuerte';
-GRANT SELECT, INSERT, UPDATE, DELETE ON perritos_calle.* TO 'perritos_app'@'%';
-FLUSH PRIVILEGES;
+### Paso 3: Crear el usuario de la aplicación (obligatorio)
+
+El backend no entra a la base como `root`, entra con un usuario propio llamado `perritos_app` (es el que trae el `.env.example`). **Sin este paso el backend no puede conectarse.**
+
+Entra a MySQL (te pide la contraseña de `root`):
+
+```bash
+mysql -u root -p
 ```
 
-## 5. Configuración (variables de entorno)
+Cuando el prompt cambie a `mysql>`, pega **estas líneas una por una** (cada una termina en `;` y con Enter se ejecuta). Cambia `perritos123` por la contraseña que quieras, pero **usa solo letras y números** (nada de `@`, `:`, `/`, `#`, `%`, espacios): esos símbolos rompen la `DATABASE_URL` del `.env`.
 
-Copiar la plantilla y llenar con valores reales:
+```sql
+CREATE USER 'perritos_app'@'localhost' IDENTIFIED BY 'perritos123';
+```
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON perritos_calle.* TO 'perritos_app'@'localhost';
+```
+```sql
+FLUSH PRIVILEGES;
+```
+```sql
+exit
+```
+
+✅ Cada línea responde `Query OK`. **Anota la contraseña que elegiste**: la necesitas en la sección 5.
+
+### Paso 4: Comprobar que la base quedó bien
+
+```bash
+mysql -u perritos_app -p -e "SELECT COUNT(*) FROM perritos_calle.perrito;"
+```
+
+Escribe la contraseña de `perritos_app` (`perritos123` si no la cambiaste).
+
+✅ Debe mostrar un `15`. Si sale `Access denied`, la contraseña o el usuario están mal: repite el paso 3.
+
+## 5. Configuración (variables de entorno y carpeta de fotos)
+
+Todo desde la **raíz del proyecto**.
+
+### Paso 5: Crear tu archivo `.env`
+
+El repositorio trae `.env.example`, que es una plantilla. Tu copia se llama `.env` y va **en la raíz del proyecto, al lado de `.env.example`** (no dentro de `Backend/`).
+
+**Windows (CMD):**
+```bat
+copy .env.example .env
+```
+
+**Windows (Git Bash) / Linux / Mac:**
 ```bash
 cp .env.example .env
 ```
 
-Estos 3 valores **no vienen predefinidos** — cada quien los decide al momento de instalar:
+✅ Si haces `dir` (CMD) o `ls -a` (Git Bash/Linux), deben aparecer `.env` y `.env.example`.
 
-| Variable | ¿De dónde sale el valor? |
+### Paso 6: Crear la carpeta de fotos y copiar las fotos de prueba
+
+Las fotos de los perritos **no se guardan dentro del repositorio**: viven en una carpeta tuya, y el backend las lee de ahí. Los 15 perritos de prueba ya traen su foto asignada, así que hay que crear esa carpeta y copiar las fotos que vienen en `Backend/images/`. **Si te saltas este paso, la lista sale pero las fotos no cargan.**
+
+Elige dónde quieres la carpeta. Estas rutas son solo ejemplo; puede ser cualquier otra **fuera** del repositorio:
+
+**Windows (CMD):**
+```bat
+mkdir C:\perritos_imagenes
+```
+```bat
+copy Backend\images\* C:\perritos_imagenes\
+```
+
+**Windows (Git Bash):**
+```bash
+mkdir /c/perritos_imagenes
+```
+```bash
+cp Backend/images/* /c/perritos_imagenes/
+```
+
+**Linux / Mac:**
+```bash
+mkdir -p ~/perritos_imagenes
+```
+```bash
+cp Backend/images/* ~/perritos_imagenes/
+```
+
+✅ Debe haber 19 archivos `.jpg` en esa carpeta (`perro_01.jpg` … `perro_15.jpg` y 4 más con nombres largos). Comprueba con `dir C:\perritos_imagenes` (CMD) o `ls ~/perritos_imagenes` (Linux/Mac).
+
+Además crea una carpeta para respaldos (solo la usa `db/backup.sh`; el proyecto corre sin ella, pero la variable debe tener algún valor):
+
+**Windows:** `mkdir C:\perritos_respaldos`  
+**Linux / Mac:** `mkdir -p ~/perritos_respaldos`
+
+### Paso 7: Llenar el `.env`
+
+Abre el `.env` con un editor de texto. Desde la terminal:
+
+**Windows (CMD o Git Bash):** `notepad .env`  
+**Linux:** `nano .env` (guardas con `Ctrl+O`, Enter, y sales con `Ctrl+X`)
+
+Deja **solo estas 4 líneas** (borra o ignora las que empiezan con `#`) y cambia lo que dice **← cambia esto**:
+
+**Windows** (usa `/` en las rutas, **no** `\`, aunque estemos en Windows):
+```
+DATABASE_URL=mysql+pymysql://perritos_app:perritos123@localhost:3306/perritos_calle
+RUTA_IMAGENES=C:/perritos_imagenes
+RUTA_RESPALDOS=C:/perritos_respaldos
+CORS_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
+```
+
+**Linux / Mac** (pon tu usuario real en lugar de `tuusuario`; `~` no funciona dentro del `.env`):
+```
+DATABASE_URL=mysql+pymysql://perritos_app:perritos123@localhost:3306/perritos_calle
+RUTA_IMAGENES=/home/tuusuario/perritos_imagenes
+RUTA_RESPALDOS=/home/tuusuario/perritos_respaldos
+CORS_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
+```
+
+Qué es cada línea:
+
+| Variable | Qué poner |
 |---|---|
-| `DATABASE_URL` | `mysql+pymysql://[USUARIO]:[CONTRASEÑA]@localhost:3306/[NOMBRE_DE_LA_BASE]` |
-| `RUTA_IMAGENES` | Una carpeta que tú creas en tu propia computadora, **fuera** de este repositorio (ej. `C:/perritos_imagenes` en Windows, o `/var/data/perritos/imagenes` en Linux/Mac). |
-| `RUTA_RESPALDOS` | Otra carpeta que tú eliges, donde se van a guardar los archivos que genere `backup.sh`. |
+| `DATABASE_URL` | El usuario y la contraseña del **paso 3**. La forma es `mysql+pymysql://USUARIO:CONTRASEÑA@localhost:3306/perritos_calle`. **← cambia `perritos123` si elegiste otra contraseña.** |
+| `RUTA_IMAGENES` | La carpeta que creaste en el **paso 6**. Tiene que ser exactamente esa. |
+| `RUTA_RESPALDOS` | La carpeta de respaldos del paso 6. |
+| `CORS_ORIGINS` | Déjala tal cual. Son las direcciones desde donde el frontend puede hablar con el backend. Solo se cambia para probar desde el celular (sección 7). |
 
-Variables del backend:
+Guarda el archivo y **ciérralo**. El frontend no usa variables de entorno propias: la dirección del backend (`API_BASE` en `app.js`) se arma sola a partir del host desde el que se abrió la página, así que no hay nada que configurar a mano ni siquiera para probarlo desde el celular (ver sección 7).
 
-| Variable | ¿De dónde sale el valor? |
-|---|---|
-| `CORS_ORIGINS` | Direcciones desde donde el frontend puede llamar al backend. Ejemplo: `http://127.0.0.1:5500,http://localhost:5500` |
-
-El frontend no usa variables de entorno propias: la dirección del backend (`API_BASE` en `app.js`) se arma sola a partir del host desde el que se abrió la página, así que no hay nada que configurar a mano ni siquiera para probarlo desde el celular (ver sección 7).
+✅ Revisa que no haya espacios alrededor del `=` y que la contraseña sea la misma del paso 3.
 
 ## 6. Cómo ejecutar el backend y el frontend
 
-**Backend:**
+Aquí ya necesitas **dos terminales**. La primera queda ocupada con el backend, por eso el frontend va en otra.
+
+### Terminal 1: el backend
+
+**Paso 8: entrar a la carpeta del backend y crear el entorno virtual.** El entorno virtual (`venv`) es una carpeta donde se instalan las librerías de Python solo para este proyecto. Se crea **una sola vez**.
+
 ```bash
 cd Backend
-python -m venv
-pip install requeriments.txt
+```
+```bash
+python -m venv venv
+```
+(En Linux/Mac, si `python` no existe, usa `python3 -m venv venv`.)
+
+✅ Aparece una carpeta nueva `venv` dentro de `Backend`.
+
+**Paso 9: activar el entorno virtual.** Esto se hace **cada vez que abras una terminal nueva** para correr el backend.
+
+**Windows (CMD):**
+```bat
+venv\Scripts\activate
+```
+
+**Windows (Git Bash):**
+```bash
+source venv/Scripts/activate
+```
+
+**Linux / Mac:**
+```bash
+source venv/bin/activate
+```
+
+✅ Al inicio de la línea de la terminal aparece `(venv)`. Si no aparece, no está activado.
+
+**Paso 10: instalar las librerías** (solo la primera vez; tarda un par de minutos):
+
+```bash
+pip install -r requirements.txt
+```
+
+✅ Termina con `Successfully installed …` y sin la palabra `ERROR` en rojo.
+
+**Paso 11: arrancar el backend.**
+
+```bash
 uvicorn app.main:app --reload --port 8000
 ```
-Queda disponible en: `http://127.0.0.1:8000`
 
-**Frontend:**
+✅ Debe salir `Uvicorn running on http://127.0.0.1:8000` y **la terminal se queda ocupada: es normal, no la cierres.** Para apagarlo después: `Ctrl+C`.
+
+Comprobación: abre en el navegador `http://127.0.0.1:8000/health`. Debe mostrar `{"status":"ok"}`. Con `http://127.0.0.1:8000/api/perritos/` deben salir los 15 perritos de prueba.
+
+> Si al arrancar sale un error largo que menciona `DATABASE_URL`, `Could not parse rfc1738 URL` o `Access denied`, revisa el `.env` (paso 7) y la contraseña del usuario `perritos_app` (paso 3). Detalles en la sección 10.
+
+### Terminal 2: el frontend
+
+Abre **otra terminal nueva** (deja la del backend corriendo). Esta empieza en cualquier carpeta, así que primero entra a la raíz del proyecto con `cd` (por ejemplo `cd Documentos\Unidad1ProLog` o donde lo hayas clonado).
+
+**Paso 12: entrar a la carpeta del frontend y servirlo.**
+
 ```bash
-cd ..
 cd frontend
+```
+```bash
 python -m http.server 5500
 ```
-Queda disponible en: `http://127.0.0.1:5500` o `http://localhost:5500`. Con Live Server de VS Code basta con abrir `frontend/index.html` y darle "Go Live" (también en el puerto 5500).
+(En Linux/Mac, si `python` no existe, usa `python3 -m http.server 5500`.)
+
+✅ Debe salir `Serving HTTP on … port 5500`. Esta terminal también se queda ocupada.
+
+**Paso 13: abrir la página.** En el navegador entra a:
+
+```
+http://127.0.0.1:5500
+```
+(o `http://localhost:5500`). Con Live Server de VS Code también sirve: abre `frontend/index.html` y dale "Go Live" (usa el mismo puerto 5500).
+
+✅ **Debes ver el mapa y los 15 perritos con su foto.** Si la lista sale vacía, revisa que el backend siga corriendo. Si salen los perritos pero sin foto, revisa el paso 6 y que `RUTA_IMAGENES` del `.env` sea esa misma carpeta (después de cambiar el `.env` hay que apagar el backend con `Ctrl+C` y volver a correr el paso 11).
 
 No abras `index.html` con doble clic (`file://`): el navegador bloquea las peticiones al backend por CORS.
+
+**La próxima vez que quieras usarlo** ya no repites la instalación: solo abres 2 terminales. En la primera haces `cd Backend`, activas el venv (paso 9) y corres el paso 11. En la segunda haces `cd frontend` y corres el paso 12.
 
 ## 7. Cómo probarlo desde un celular en la misma red
 
