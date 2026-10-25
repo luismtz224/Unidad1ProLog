@@ -1,0 +1,6 @@
+# mix.lock SÍ se sube (fija las versiones). deps/ y _build/ no.
+/_build/
+/deps/
+/doc/
+erl_crash.dump
+*.ez

@@ -490,3 +490,89 @@ Errores:
 **Orientado a objetos (backend):** los datos se modelan con clases. En `Backend/app/models.py`, `Raza`, `Color`, `Perrito` y `PerritoColor` son clases de SQLAlchemy mapeadas a las tablas, con relaciones (`relationship`) y borrado en cascada de los colores de un perrito. En `Backend/app/schemas.py`, `PerritoIn` es una clase de Pydantic que define la forma del cuerpo del `POST` y encapsula sus validaciones (`@field_validator`).
 
 **Imperativo (backend):** el flujo paso a paso de `registrar` (buscar, validar, insertar, confirmar la transacción) y de `guardar_foto_base64` en `Backend/app/services/imagen.py` (decodificar el base64, verificar la imagen con Pillow, generar un nombre con UUID y escribir el archivo en disco) son secuencias de instrucciones con condicionales que modifican estado.
+
+
+---
+
+# Proyecto 2 — Perritos de la calle, ahora con Elixir
+
+Programación Lógica y Funcional · Unidad 2 · Elixir.
+La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante agrega una funcionalidad escrita en Elixir con estilo funcional (núcleo de funciones puras + cáscara que consulta datos y responde HTTP), que se usa desde el frontend.
+
+## 12. Integrantes y funcionalidades del P2
+
+| Integrante | Funcionalidad | Issue |
+|---|---|---|
+| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+
+## 13. Del P1 al P2
+
+**Al terminar el P1 había:** frontend en HTML/CSS/JS plano, backend en FastAPI (Python), base de datos MySQL con scripts en `db/`, y se levantaba a mano (cada pieza por separado).
+
+**Se agregó en el P2:**
+- `funcional/`: servicio en Elixir (Plug + Bandit + MyXQL) que expone `/f/...` como JSON.
+- `docker-compose.yml`, `Backend/Dockerfile`, `funcional/Dockerfile`: toda la app con `docker compose up`.
+- `proxy/nginx.conf`: única puerta de entrada que reparte por ruta (`/`, `/api/`, `/f/`).
+- Servicio `tunel` (Cloudflare): publica el proxy en internet.
+- `db/05_datos_muestra.sql` (generado por `db/generar_datos_muestra.py`): 120 avistamientos más para que las funcionalidades tengan qué mostrar.
+- `db/docker/10_usuario_lectura.sh`: usuario de sólo lectura de la base para el servicio Elixir.
+- Las funcionalidades de la sección 12.
+
+**Se modificó del P1:**
+- `frontend/app.js`: la dirección del backend dejó de ser `http://<host>:8000` y ahora es relativa (`/api/...`), porque con el túnel el navegador de quien visita no puede usar `localhost:8000`. Se agregó `FUNCIONAL_URL` (`/f`).
+- `.env.example`: variables nuevas de Docker (`DB_*`).
+- [PENDIENTE: cambios al frontend/backend que haga cada funcionalidad, con su issue]
+
+## 14. Cómo levantarla con Docker
+
+Sólo se necesita Docker (Docker Desktop en Windows/macOS). Desde un clon limpio:
+
+```bash
+cp .env.example .env        # y cambiar las contraseñas
+docker compose up --build
+```
+
+1. Esperar a que termine de arrancar (la primera vez tarda: compila Elixir y carga la base).
+2. En local: http://localhost:8080 (la app) y http://localhost:8080/f/salud (debe responder `ok`).
+3. URL pública del túnel (cambia cada vez que se reinicia el contenedor):
+
+```bash
+docker compose logs tunel | grep trycloudflare
+```
+
+Para empezar de cero (borra la base y las fotos subidas): `docker compose down -v`.
+
+> La base se carga **sólo la primera vez** (cuando el volumen está vacío). Si cambian algo en `db/*.sql`, hay que correr `docker compose down -v` y levantar de nuevo.
+
+## 15. Arquitectura
+
+```
+visitante ──▶ https://….trycloudflare.com
+                     │
+                 túnel (cloudflared)
+                     │
+                 proxy (nginx) ─────────────────────────┐
+                     │ /             │ /api/            │ /f/
+                     ▼               ▼                  ▼
+              frontend (P1)    backend FastAPI (P1)   servicio Elixir (P2)
+                                     │                  │  CÁSCARA: rutas, consulta, JSON
+                                     ▼                  │  NÚCLEO: funciones puras
+                                 base MySQL (P1) ◀──────┘  (sólo lectura)
+```
+
+El servicio Elixir usa la **opción A** (directo a la base, con MyXQL y un usuario de sólo lectura). Todo lo que toca la base o el reloj vive en la cáscara (`Perritos.Datos`, routers); el núcleo recibe y regresa datos.
+
+## 16. Funcionalidades del P2
+
+[PENDIENTE: por cada funcionalidad — issue, qué hace, cómo se usa en la app, endpoints (método, ruta, ejemplo de respuesta) y dónde están los requisitos del paradigma.]
+
+## 17. Pruebas
+
+```bash
+docker compose run --rm herramientas mix deps.get      # la primera vez
+docker compose run --rm herramientas mix test
+```
+
+`mix test` no necesita la base de datos ni el servidor: sólo prueba el núcleo.

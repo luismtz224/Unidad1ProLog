@@ -1,0 +1,8 @@
+# Fin de línea LF en archivos que corren dentro de contenedores Linux.
+# Sin esto, Git en Windows los convierte a CRLF y fallan (p. ej. "/bin/sh^M").
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.conf      text eol=lf
+*.yml       text eol=lf
+*.ex        text eol=lf
+*.exs       text eol=lf

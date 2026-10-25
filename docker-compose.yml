@@ -1,0 +1,129 @@
+# ============================================================
+# Proyecto 2 — toda la aplicación con un solo comando:
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Un solo punto de entrada: el proxy (nginx). El túnel de Cloudflare
+# apunta al proxy; el proxy reparte por ruta:
+#   /api/ -> backend (FastAPI, P1)
+#   /f/   -> funcional (Elixir, P2)
+#   /     -> frontend (HTML/JS, P1)
+# ============================================================
+name: perritos
+
+services:
+  # ---------- Base de datos (P1) ----------
+  bd:
+    image: mysql:8.0
+    # native_password: evita problemas de autenticación con MyXQL
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --character-set-client-handshake=FALSE
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      LANG: C.UTF-8
+      MYSQL_DATABASE: ${DB_NOMBRE:-perritos_calle}
+      MYSQL_USER: ${DB_USUARIO}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      DB_LECTURA_USUARIO: ${DB_LECTURA_USUARIO}
+      DB_LECTURA_PASSWORD: ${DB_LECTURA_PASSWORD}
+      TZ: America/Monterrey
+    volumes:
+      - datos_bd:/var/lib/mysql
+      # Los scripts de db/ se ejecutan en orden, SOLO la primera vez
+      # (cuando el volumen datos_bd está vacío). 04_consultas.sql no
+      # se carga: son consultas de referencia, no datos.
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/02_catalogos.sql:/docker-entrypoint-initdb.d/02_catalogos.sql:ro
+      - ./db/03_datos_prueba.sql:/docker-entrypoint-initdb.d/03_datos_prueba.sql:ro
+      - ./db/05_datos_muestra.sql:/docker-entrypoint-initdb.d/05_datos_muestra.sql:ro
+      - ./db/docker/10_usuario_lectura.sh:/docker-entrypoint-initdb.d/10_usuario_lectura.sh:ro
+    healthcheck:
+      # -h 127.0.0.1 (por TCP): durante la inicialización el servidor
+      # temporal NO escucha por TCP, así que "healthy" = ya terminó de cargar.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+
+  # ---------- Copia las fotos de muestra al volumen (una vez) ----------
+  fotos-semilla:
+    image: alpine:3.20
+    command: sh -c "cp -n /semilla/* /data/imagenes/"
+    volumes:
+      - fotos:/data/imagenes
+      - ./db/fotos_prueba:/semilla:ro
+    restart: "no"
+
+  # ---------- Backend del P1 (FastAPI) ----------
+  backend:
+    build: ./Backend
+    environment:
+      DATABASE_URL: mysql+pymysql://${DB_USUARIO}:${DB_PASSWORD}@bd:3306/${DB_NOMBRE:-perritos_calle}
+      RUTA_IMAGENES: /data/imagenes
+      CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - fotos:/data/imagenes
+    depends_on:
+      bd:
+        condition: service_healthy
+      fotos-semilla:
+        condition: service_completed_successfully
+
+  # ---------- Frontend del P1 (archivos estáticos) ----------
+  frontend:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
+  # ---------- Servicio Elixir (P2) ----------
+  funcional:
+    build: ./funcional
+    environment:
+      # Opción A: directo a la base de datos, con un usuario de SOLO LECTURA
+      BD_HOST: bd
+      BD_USUARIO: ${DB_LECTURA_USUARIO}
+      BD_PASSWORD: ${DB_LECTURA_PASSWORD}
+      BD_NOMBRE: ${DB_NOMBRE:-perritos_calle}
+      TZ: America/Monterrey
+    depends_on:
+      bd:
+        condition: service_healthy
+
+  # ---------- Proxy: única puerta de entrada ----------
+  proxy:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80" # para probar en local: http://localhost:8080
+    depends_on: [frontend, backend, funcional]
+
+  # ---------- Túnel de Cloudflare ----------
+  # URL pública:  docker compose logs tunel | grep trycloudflare
+  tunel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://proxy:80
+    depends_on: [proxy]
+
+  # ---------- Herramientas (no arranca con "up") ----------
+  # docker compose run --rm herramientas mix <comando>
+  herramientas:
+    image: elixir:1.18-alpine
+    profiles: ["herramientas"]
+    working_dir: /app
+    environment:
+      TZ: America/Monterrey
+    volumes:
+      - ./funcional:/app
+      - mix_cache:/root/.mix
+      - hex_cache:/root/.hex
+
+volumes:
+  datos_bd:
+  fotos:
+  mix_cache:
+  hex_cache:
