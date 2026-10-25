@@ -3,8 +3,19 @@
 // "localhost" fijo, para que funcione igual en la compu que en el
 // celular conectado por wifi. si el backend cambia de puerto, solo se
 // cambia el 8000 de aquí abajo
-const API_BASE = `http://${window.location.hostname}:8000`;
+//
+// P2: con Docker todo se sirve desde UN solo origen (el proxy nginx, y por
+// el túnel de Cloudflare), así que las rutas son relativas: /api/... para el
+// backend del P1 y /f/... para el servicio Elixir. "localhost:8000" no
+// funcionaría para quien abre la página desde su celular.
+// Sólo si la página se abre con el servidor de desarrollo del P1 (puerto
+// 5500) se sigue usando el backend directo en el puerto 8000.
+const API_BASE = window.location.port === "5500"
+  ? `http://${window.location.hostname}:8000`
+  : "";
 const API_URL = `${API_BASE}/api`;
+// servicio Elixir (P2): lo usan las funcionalidades nuevas
+const FUNCIONAL_URL = `${API_BASE === "" ? "" : `http://${window.location.hostname}:4000`}/f`;
 
 // CATÁLOGOS — copia de lo que hay en las tablas raza y color de la base de datos.
 // si se agrega o cambia una raza o un color en la base, hay que cambiarlo aquí también.
@@ -121,6 +132,7 @@ function renderizarTicker() {
     .join("");
 
   track.innerHTML = itemsHtml + itemsHtml;
+  track.style.animationDuration = `${Math.max(20, nombres.length * 1.9)}s`;
 }
 
 // inicializar — catálogos
