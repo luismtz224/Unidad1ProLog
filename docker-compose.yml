@@ -25,7 +25,10 @@ services:
       MYSQL_PASSWORD: ${BD_PASSWORD}
     volumes:
       - bd_datos:/var/lib/mysql
-      - ./db:/docker-entrypoint-initdb.d:ro
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/02_catalogos.sql:/docker-entrypoint-initdb.d/02_catalogos.sql:ro
+      - ./db/03_datos_prueba.sql:/docker-entrypoint-initdb.d/03_datos_prueba.sql:ro
+      - ./db/04_consultas.sql:/docker-entrypoint-initdb.d/04_consultas.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s

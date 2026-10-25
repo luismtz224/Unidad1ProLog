@@ -445,7 +445,8 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
   // });
   // const data = await res.json();
 
-    const res = await fetch("http://localhost:8000/api/perritos", {
+const API_BASE = (location.port === "5500" || location.protocol === "file:") ? "http://localhost:8000" : "";
+    const res = await fetch(`${API_BASE}/api/perritos/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(registro)
@@ -502,7 +503,7 @@ document.getElementById("dog-form").addEventListener("submit", async e => {
 
 async function cargarPerritos() {
     try {
-      const res = await fetch("http://localhost:8000/api/perritos/");
+      const res = await fetch(`${(location.port === "5500" || location.protocol === "file:") ? "http://localhost:8000" : ""}/api/perritos/`);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
@@ -532,7 +533,7 @@ async function cargarPerritos() {
 function getFotoUrl(foto) {
   if (!foto) return "";
   if (foto.startsWith("data:") || foto.startsWith("http")) return foto;
-  return "http://localhost:8000" + foto;
+  return ((location.port === "5500" || location.protocol === "file:") ? "http://localhost:8000" : "") + foto;
 }
 
 function renderizarLista() {
@@ -619,7 +620,7 @@ document.getElementById("dialog-cancelar").addEventListener("click", () => {
 
 document.getElementById("dialog-confirmar").addEventListener("click", async () => {
   try {
-    const res = await fetch(`http://localhost:8000/api/perritos/${currentDetailId}`, { method: "DELETE" });
+    const res = await fetch(`${(location.port === "5500" || location.protocol === "file:") ? "http://localhost:8000" : ""}/api/perritos/${currentDetailId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("No se pudo eliminar");
     
     PERRITOS = PERRITOS.filter(x => x.id !== currentDetailId);
