@@ -42,7 +42,7 @@ defmodule Perritos.Router do
 
   # (deja estas líneas en blanco para que Git no marque conflicto)
 
-  # forward "/f/estadisticas", to: Perritos.Rutas.Estadisticas
+  forward "/f/estadisticas", to: Perritos.Rutas.Estadisticas
 
   # ===================================================================
 
