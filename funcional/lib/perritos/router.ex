@@ -44,7 +44,7 @@ defmodule Perritos.Router do
 
   forward "/f/estadisticas", to: Perritos.Rutas.Estadisticas
 
-  forward "/f/perdidos", to: Perdidos.Rutas.Perdidos
+  forward "/f/perdidos", to: Perritos.Rutas.Perdidos
 
   # ===================================================================
 

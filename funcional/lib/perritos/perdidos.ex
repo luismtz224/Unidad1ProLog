@@ -1,13 +1,18 @@
-defmodule Perritos.Perdidos do:
-    @r 6_371_000
-    @lat_ref 25.42
+defmodule Perritos.Perdidos do
+  @r 6_371_000
+  @lat_ref 25.42
 
-    def sin_verse_desde(ahora, dias) do
-        hoy = NaiveDateTime.to_date(ahora)
-        fn a -> dias_sin_verse(a, hoy) >= dias end
-    end
+  @doc "Reporte completo para la ruta HTTP: crea el filtro por días y agrupa por zonas."
+  def reporte(avistamientos, dias, tamano, ahora) do
+    perdidos(avistamientos, sin_verse_desde(ahora, dias), tamano, ahora)
+  end
 
-    def dias_sin_verse(%{fecha: fecha}, hoy),
+  def sin_verse_desde(ahora, dias) do
+    hoy = NaiveDateTime.to_date(ahora)
+    fn a -> dias_sin_verse(a, hoy) >= dias end
+  end
+
+  def dias_sin_verse(%{fecha: fecha}, hoy),
     do: Date.diff(hoy, NaiveDateTime.to_date(fecha))
 
   @doc "RECIBE el filtro (una función). Acepta lista o Stream."
@@ -24,9 +29,22 @@ defmodule Perritos.Perdidos do:
   end
 
   defp zona(centro, perros, hoy) do
-    %{centro: centro,
+    %{
+      centro: centro,
       total: length(perros),
-      perros: Enum.map(perros, fn a -> %{id: a.id, dias: dias_sin_verse(a, hoy)} end)}
+      perros: Enum.map(perros, fn a -> ficha(a, hoy) end)
+    }
+  end
+
+  defp ficha(a, hoy) do
+    %{
+      id: a.id,
+      nombre: a.nombre,
+      raza: a.raza,
+      colores: a.colores,
+      foto: a.foto,
+      dias: dias_sin_verse(a, hoy)
+    }
   end
 
   @doc "REGRESA una función: coordenada -> celda de la cuadrícula."
