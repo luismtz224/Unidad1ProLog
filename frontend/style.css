@@ -770,3 +770,270 @@ input[type="text"]:focus, select:focus, button:focus-visible {
   color: var(--surface-raised);
   font-size: 0.92rem;
 }
+
+
+/* ============================================================
+   PERRITOS PERDIDOS DE VISTA (#view-lost)
+   ============================================================ */
+.lost-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.lost-intro h2 {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.lost-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  align-items: center;
+}
+
+.lost-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.lost-control-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+#lost-dias-rango {
+  width: 160px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+#lost-dias,
+#lost-tamano {
+  width: auto;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+}
+
+#lost-dias {
+  width: 4.8em;
+  text-align: center;
+}
+
+.lost-aviso-demo {
+  background: var(--accent-100);
+  color: var(--accent-700);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px var(--sp-2);
+  border-radius: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.lost-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--sp-2);
+  min-height: calc(100vh - 320px);
+}
+
+.lost-map {
+  min-height: 460px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.lost-sidebar {
+  background: var(--surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+  padding: var(--sp-1) 0;
+}
+
+.lost-resumen {
+  padding: 12px var(--sp-2) 6px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.lost-resumen strong {
+  color: var(--ink);
+}
+
+.lost-estado {
+  padding: var(--sp-4) var(--sp-2);
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.lost-estado:empty {
+  display: none;
+}
+
+.lost-estado.error {
+  color: var(--accent-700);
+  font-weight: 600;
+}
+
+.zona {
+  margin: 10px 12px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.zona.activa {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-200);
+}
+
+.zona > button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: left;
+}
+
+.zona > button:hover {
+  background: var(--surface);
+}
+
+.zona > button .num {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-tag);
+  min-width: 1.8em;
+  padding: 2px 9px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.zona ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.zona li {
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px;
+  align-items: center;
+}
+
+.zona li + li {
+  border-top: 1px solid var(--line);
+}
+
+.zona .foto {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex: none;
+  object-fit: cover;
+  background: var(--accent-200);
+  color: var(--accent-700);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+  overflow: hidden;
+}
+
+.zona .datos {
+  min-width: 0;
+}
+
+.zona .datos .nombre {
+  font-weight: 800;
+}
+
+.zona .datos .dias {
+  font-size: 0.84rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.zona .datos .detalle {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.zona-num {
+  background: var(--accent);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: var(--radius-tag);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 0.88rem;
+}
+
+.leaflet-popup-content ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 860px) {
+  .lost-layout {
+    grid-template-columns: 1fr;
+  }
+  .lost-map {
+    min-height: 320px;
+    height: 42vh;
+  }
+  .lost-sidebar {
+    max-height: none;
+  }
+  #lost-dias-rango {
+    width: 130px;
+  }
+}

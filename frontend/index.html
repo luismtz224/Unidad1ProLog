@@ -36,6 +36,7 @@
     <button class="tab active" data-view="form">Registrar</button>
     <button class="tab" data-view="map">Mapa</button>
     <button class="tab" data-view="list">Lista</button>
+    <button class="tab" data-view="lost">Perros Perdidos</button>
   </nav>
 </header>
 
@@ -134,6 +135,45 @@
     <ul id="dog-list" class="dog-list"></ul>
   </section>
 
+  <!-- perros perdidos -->
+  <section id="view-lost" class="view">
+    <div class="lost-header">
+      <div class="lost-intro">
+        <h2>Perritos perdidos de vista</h2>
+        <p class="hint">Registros que no se han vuelto a ver, agrupados por zonas.</p>
+      </div>
+      <div class="lost-controls">
+        <label class="lost-control">
+          <span>Sin verse desde hace</span>
+          <span class="lost-control-row">
+            <input id="lost-dias-rango" type="range" min="1" max="90" value="14" />
+            <input id="lost-dias" type="number" min="0" max="365" value="14" aria-label="Días sin verse" />
+            <span>días</span>
+          </span>
+        </label>
+        <label class="lost-control">
+          <span>Tamaño de zona</span>
+          <select id="lost-tamano">
+            <option value="250">250 m</option>
+            <option value="500" selected>500 m</option>
+            <option value="1000">1 km</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div id="lost-aviso-demo" class="lost-aviso-demo" hidden>
+      Datos de demostración: no vienen del servicio. Quita <code>?demo</code> de la dirección para usar los reales.
+    </div>
+    <div class="lost-layout">
+      <div id="lost-map" class="lost-map" role="application" aria-label="Mapa de zonas"></div>
+      <aside class="lost-sidebar" aria-live="polite">
+        <div id="lost-resumen" class="lost-resumen"></div>
+        <div id="lost-estado" class="lost-estado"></div>
+        <div id="lost-zonas" class="lost-zonas"></div>
+      </aside>
+    </div>
+  </section>
+
   <!-- detalle -->
   <section id="view-detail" class="view">
     <div class="detail-header">
@@ -180,6 +220,8 @@
      app.js en caché (el servidor de pruebas no manda Cache-Control).
      Subir este número cada vez que se cambie app.js y se vaya a
      probar de nuevo desde el celular. -->
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
+</html>
+
 </html>

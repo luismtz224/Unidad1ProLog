@@ -224,6 +224,12 @@ function irAVista(nombre) {
   views.forEach(v => v.classList.toggle("active", v.id === "view-" + nombre));
   if (nombre === "map") setTimeout(() => fullMap.invalidateSize(), 50);
   if (nombre === "list") renderizarLista();
+  if (nombre === "lost") {
+    setTimeout(() => {
+      lostMap.invalidateSize();
+      cargarPerdidos();
+    }, 50);
+  }
 }
 
 tabs.forEach(t => t.addEventListener("click", () => irAVista(t.dataset.view)));
@@ -672,5 +678,231 @@ document.getElementById("dialog-confirmar").addEventListener("click", async () =
 dialogEliminar.addEventListener("click", e => {
   if (e.target === dialogEliminar) dialogEliminar.hidden = true;
 });
+
+// ============================================================
+// PERRITOS PERDIDOS DE VISTA (P2 — Servicio Elixir /f/perdidos)
+// ============================================================
+const PERDIDOS_DEMO = new URLSearchParams(location.search).has("demo");
+const RADIO_TIERRA = 6371000;
+const LAT_REF_PERDIDOS = 25.42;
+
+const lostMap = L.map("lost-map").setView([25.42, -101.0], 12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; colaboradores de OpenStreetMap"
+}).addTo(lostMap);
+const lostCapa = L.layerGroup().addTo(lostMap);
+
+let lostRectangulos = [];
+let lostTarjetas = [];
+let lostUltimaPeticion = 0;
+let lostTemporizador = null;
+
+function crearNodo(tag, props, ...hijos) {
+  const nodo = document.createElement(tag);
+  Object.assign(nodo, props || {});
+  hijos.flat().forEach(h => nodo.append(h));
+  return nodo;
+}
+
+const textoDiasPerdido = n => n <= 0 ? "visto hoy" : n === 1 ? "hace 1 día" : `hace ${n} días`;
+const pluralizar = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+
+function limitesCelda(centro, tamano) {
+  const dlat = (tamano / 2) / RADIO_TIERRA * 180 / Math.PI;
+  const dlon = (tamano / 2) / (RADIO_TIERRA * Math.cos(LAT_REF_PERDIDOS * Math.PI / 180)) * 180 / Math.PI;
+  return [[centro.lat - dlat, centro.lon - dlon], [centro.lat + dlat, centro.lon + dlon]];
+}
+
+function datosDemoPerdidos(dias) {
+  const zonas = [
+    { centro: { lat: 25.4205, lon: -101.0030 }, perros: [
+      { id: 1, nombre: "Canela", raza: "Criollo", colores: ["Dorado"], dias: 41 },
+      { id: 2, nombre: "Pinto", raza: null, colores: ["Negro", "Blanco"], dias: 28 },
+      { id: 3, nombre: "Luna", raza: "Labrador", colores: ["Negro"], dias: 17 } ] },
+    { centro: { lat: 25.4390, lon: -100.9740 }, perros: [
+      { id: 4, nombre: "Firulais", raza: "Pastor alemán", colores: ["Café", "Negro"], dias: 63 },
+      { id: 5, nombre: "Manchas", raza: null, colores: ["Blanco", "Café"], dias: 9 } ] },
+    { centro: { lat: 25.4080, lon: -100.9560 }, perros: [
+      { id: 6, nombre: "Chato", raza: "Chihuahua", colores: ["Café"], dias: 22 } ] },
+    { centro: { lat: 25.4480, lon: -101.0250 }, perros: [
+      { id: 7, nombre: "Rufo", raza: null, colores: ["Gris"], dias: 5 },
+      { id: 8, nombre: "Nube", raza: "Poodle", colores: ["Blanco"], dias: 15 } ] }
+  ];
+  return zonas
+    .map(z => ({ ...z, perros: z.perros.filter(p => p.dias >= dias).sort((a, b) => b.dias - a.dias) }))
+    .filter(z => z.perros.length > 0)
+    .map(z => ({ ...z, total: z.perros.length }))
+    .sort((a, b) => b.total - a.total);
+}
+
+async function pedirPerdidos(dias, tamano) {
+  if (PERDIDOS_DEMO) return datosDemoPerdidos(dias);
+  let r;
+  try {
+    r = await fetch(`${FUNCIONAL_URL}/perdidos?dias=${dias}&tamano=${tamano}`);
+  } catch (e) {
+    throw new Error("No se pudo conectar con el servicio Elixir (/f/perdidos). Verifica que el contenedor funcional esté corriendo.");
+  }
+  if (r.status === 404) throw new Error("El servicio respondió 404: falta el forward de /f/perdidos en el router o el proxy no manda /f/ al servicio Elixir.");
+  if (r.status === 503) throw new Error("El servicio no pudo leer la base de datos (503).");
+  if (!r.ok) throw new Error(`El servicio respondió ${r.status}.`);
+  return r.json();
+}
+
+function seleccionarZonaPerdidos(i, desdeLista) {
+  lostRectangulos.forEach((r, j) => r.setStyle({ weight: j === i ? 3 : 1.5 }));
+  lostTarjetas.forEach((t, j) => t.classList.toggle("activa", j === i));
+  const r = lostRectangulos[i];
+  if (!r) return;
+  lostMap.flyToBounds(r.getBounds().pad(1.5), { duration: 0.6, maxZoom: 16 });
+  r.openPopup();
+  if (!desdeLista && lostTarjetas[i]) {
+    lostTarjetas[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+
+function crearFichaPerroPerdido(p) {
+  const inicial = crearNodo("span", {
+    className: "foto",
+    textContent: (p.nombre || "?").charAt(0).toUpperCase()
+  });
+  let foto = inicial;
+  if (p.foto) {
+    foto = crearNodo("img", {
+      className: "foto",
+      src: getFotoUrl(p.foto),
+      alt: p.nombre,
+      loading: "lazy"
+    });
+    foto.onerror = () => foto.replaceWith(inicial);
+  }
+  const detalle = [p.raza ? textoRaza(p.raza) : null, (p.colores || []).join(", ")].filter(Boolean).join(" · ");
+  return crearNodo("li", {}, foto,
+    crearNodo("div", { className: "datos" },
+      crearNodo("div", { className: "nombre", textContent: p.nombre }),
+      crearNodo("div", { className: "dias", textContent: textoDiasPerdido(p.dias) }),
+      crearNodo("div", { className: "detalle", textContent: detalle || "Sin más datos" })
+    )
+  );
+}
+
+function pintarPerdidos(zonas, dias, tamano) {
+  lostCapa.clearLayers();
+  lostRectangulos = [];
+  lostTarjetas = [];
+
+  const elZonas = document.getElementById("lost-zonas");
+  const elEstado = document.getElementById("lost-estado");
+  const elResumen = document.getElementById("lost-resumen");
+
+  elZonas.replaceChildren();
+  elEstado.className = "lost-estado";
+
+  const totalPerros = zonas.reduce((s, z) => s + z.total, 0);
+
+  if (zonas.length === 0) {
+    elResumen.replaceChildren();
+    elEstado.replaceChildren(
+      crearNodo("p", { textContent: `Ningún perro lleva ${dias} días o más sin verse.` }),
+      crearNodo("p", { textContent: "Prueba con menos días, o revisa que los datos de muestra tengan fechas variadas." })
+    );
+    return;
+  }
+
+  elEstado.replaceChildren();
+  elResumen.replaceChildren(
+    crearNodo("strong", { textContent: pluralizar(totalPerros, "perro", "perros") }),
+    ` en ${pluralizar(zonas.length, "zona", "zonas")} · sin verse desde hace ${dias} días o más`
+  );
+
+  const maximo = Math.max(...zonas.map(z => z.total));
+
+  zonas.forEach((z, i) => {
+    const intensidad = z.total / maximo;
+
+    const rect = L.rectangle(limitesCelda(z.centro, tamano), {
+      color: "#e6532c",
+      weight: 1.5,
+      fillColor: "#e6532c",
+      fillOpacity: 0.18 + 0.45 * intensidad
+    }).addTo(lostCapa);
+
+    rect.bindPopup(crearNodo("div", {},
+      crearNodo("strong", { textContent: pluralizar(z.total, "perro", "perros") }),
+      crearNodo("ul", {}, z.perros.map(p => crearNodo("li", { textContent: `${p.nombre} · ${textoDiasPerdido(p.dias)}` })))
+    ));
+    rect.on("click", () => seleccionarZonaPerdidos(i, false));
+    lostRectangulos.push(rect);
+
+    L.marker([z.centro.lat, z.centro.lon], {
+      icon: L.divIcon({ className: "zona-num", html: String(z.total), iconSize: [28, 28] }),
+      keyboard: false
+    }).on("click", () => seleccionarZonaPerdidos(i, false)).addTo(lostCapa);
+
+    const tarjeta = crearNodo("section", { className: "zona" },
+      crearNodo("button", { type: "button", onclick: () => seleccionarZonaPerdidos(i, true) },
+        crearNodo("span", { textContent: `Zona ${i + 1}` }),
+        crearNodo("span", { className: "num", textContent: String(z.total) })
+      ),
+      crearNodo("ul", {}, z.perros.map(crearFichaPerroPerdido))
+    );
+    lostTarjetas.push(tarjeta);
+    elZonas.append(tarjeta);
+  });
+
+  lostMap.fitBounds(L.featureGroup(lostRectangulos).getBounds().pad(0.3), { maxZoom: 15 });
+}
+
+function mostrarErrorPerdidos(mensaje) {
+  lostCapa.clearLayers();
+  document.getElementById("lost-zonas").replaceChildren();
+  document.getElementById("lost-resumen").replaceChildren();
+  const elEstado = document.getElementById("lost-estado");
+  elEstado.className = "lost-estado error";
+  elEstado.replaceChildren(crearNodo("p", { textContent: mensaje }));
+}
+
+async function cargarPerdidos() {
+  const inputDias = document.getElementById("lost-dias");
+  const selectTamano = document.getElementById("lost-tamano");
+  const elEstado = document.getElementById("lost-estado");
+
+  const dias = Math.max(0, parseInt(inputDias.value, 10) || 0);
+  const tamano = parseInt(selectTamano.value, 10);
+  const esta = ++lostUltimaPeticion;
+
+  elEstado.className = "lost-estado";
+  elEstado.textContent = "Cargando…";
+
+  try {
+    const zonas = await pedirPerdidos(dias, tamano);
+    if (esta === lostUltimaPeticion) pintarPerdidos(zonas, dias, tamano);
+  } catch (e) {
+    if (esta === lostUltimaPeticion) mostrarErrorPerdidos(e.message);
+  }
+}
+
+function cargarPerdidosConPausa() {
+  clearTimeout(lostTemporizador);
+  lostTemporizador = setTimeout(cargarPerdidos, 250);
+}
+
+document.getElementById("lost-dias-rango").addEventListener("input", e => {
+  document.getElementById("lost-dias").value = e.target.value;
+  cargarPerdidosConPausa();
+});
+
+document.getElementById("lost-dias").addEventListener("input", e => {
+  const n = Math.min(90, Math.max(1, parseInt(e.target.value, 10) || 1));
+  document.getElementById("lost-dias-rango").value = n;
+  cargarPerdidosConPausa();
+});
+
+document.getElementById("lost-tamano").addEventListener("change", cargarPerdidos);
+
+if (PERDIDOS_DEMO) {
+  document.getElementById("lost-aviso-demo").hidden = false;
+}
 
 cargarPerritos();
