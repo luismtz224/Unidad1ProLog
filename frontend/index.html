@@ -37,6 +37,7 @@
     <button class="tab" data-view="map">Mapa</button>
     <button class="tab" data-view="list">Lista</button>
     <button class="tab" data-view="lost">Perros Perdidos</button>
+    <button class="tab" data-view="stats">Estadísticas</button>
   </nav>
 </header>
 
@@ -174,6 +175,40 @@
     </div>
   </section>
 
+  <!-- estadísticas (P2 — servicio Elixir /f/estadisticas; la lógica vive en f-estadisticas.js) -->
+  <section id="view-stats" class="view">
+    <div class="stats-header">
+      <div class="stats-intro">
+        <h2>Estadísticas</h2>
+        <p class="hint" id="stats-resumen">Cuántos perritos hay por color, por raza y por día.</p>
+      </div>
+      <label class="stats-control">
+        <span>Mostrar los</span>
+        <select id="stats-n" aria-label="Cuántos mostrar">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+        </select>
+        <span>más comunes</span>
+      </label>
+    </div>
+    <div id="stats-estado" class="stats-estado" aria-live="polite"></div>
+    <div class="stats-grid" id="stats-grid" hidden>
+      <article class="stats-card">
+        <h3>Por color</h3>
+        <ol id="stats-color" class="stats-barras"></ol>
+      </article>
+      <article class="stats-card">
+        <h3>Por raza</h3>
+        <ol id="stats-raza" class="stats-barras"></ol>
+      </article>
+      <article class="stats-card stats-card-ancha">
+        <h3>Avistamientos por día</h3>
+        <div id="stats-dia" class="stats-dias"></div>
+      </article>
+    </div>
+  </section>
+
   <!-- detalle -->
   <section id="view-detail" class="view">
     <div class="detail-header">
@@ -221,6 +256,8 @@
      Subir este número cada vez que se cambie app.js y se vaya a
      probar de nuevo desde el celular. -->
 <script src="app.js?v=6"></script>
+<!-- Estadísticas (P2): archivo propio para no mezclarlo con app.js -->
+<script src="f-estadisticas.js?v=1"></script>
 </body>
 </html>
 
