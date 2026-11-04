@@ -503,7 +503,7 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 
 | Integrante | Funcionalidad | Issue |
 |---|---|---|
-| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+| Sofía Cortés | Estadísticas | #21 |
 | [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
 | [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
 
@@ -523,6 +523,7 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 **Se modificó del P1:**
 - `frontend/app.js`: la dirección del backend dejó de ser `http://<host>:8000` y ahora es relativa (`/api/...`), porque con el túnel el navegador de quien visita no puede usar `localhost:8000`. Se agregó `FUNCIONAL_URL` (`/f`).
 - `.env.example`: variables nuevas de Docker (`DB_*`).
+- Estadísticas (#21): `frontend/index.html` ganó la pestaña "Estadísticas" y su sección, `frontend/style.css` los estilos de las barras y la gráfica, y se agregó `frontend/f-estadisticas.js` (pide `/f/estadisticas` y dibuja; no cuenta nada).
 - [PENDIENTE: cambios al frontend/backend que haga cada funcionalidad, con su issue]
 
 ## 14. Cómo levantarla con Docker
@@ -567,6 +568,55 @@ El servicio Elixir usa la **opción A** (directo a la base, con MyXQL y un usuar
 ## 16. Funcionalidades del P2
 
 [PENDIENTE: por cada funcionalidad — issue, qué hace, cómo se usa en la app, endpoints (método, ruta, ejemplo de respuesta) y dónde están los requisitos del paradigma.]
+
+### Estadísticas (issue #21)
+
+**Qué hace.** Cuenta cuántos perritos hay por color, por raza y por día, y saca los n más comunes de color y de raza.
+
+**Cómo se usa en la app.** En la pestaña "Estadísticas" se ven barras por color, barras por raza y una gráfica de columnas con los avistamientos por día. El selector "Mostrar los 3 / 5 / 10 más comunes" cambia cuántas barras se ven en color y en raza; la gráfica por día siempre muestra todos los días. Un perrito con varios colores cuenta una vez en cada uno, por eso la suma de los colores es mayor que el total.
+
+**Endpoint.**
+
+| Método | Ruta | Parámetro |
+|---|---|---|
+| GET | `/f/estadisticas` | `n` (opcional, 5 por omisión): cuántos colores y razas más comunes devolver |
+
+Ejemplo real de `/f/estadisticas?n=2` (con los datos de muestra; `por_dia` se acortó, en la respuesta trae todos los días):
+
+```json
+{
+  "total": 135,
+  "por_color": [
+    {"clave": "Blanco", "total": 64},
+    {"clave": "Negro", "total": 54}
+  ],
+  "por_raza": [
+    {"clave": "Sin raza definida", "total": 75},
+    {"clave": "Pastor Alemán", "total": 13}
+  ],
+  "por_dia": [
+    {"clave": "2026-08-22", "total": 1},
+    {"clave": "2026-08-26", "total": 1},
+    {"clave": "2026-08-27", "total": 2}
+  ]
+}
+```
+
+Si la base de datos no se puede leer, responde 503 con `{"error": "base de datos no disponible"}`.
+
+**Dónde están los requisitos del paradigma.**
+
+| Requisito | Dónde |
+|---|---|
+| Núcleo puro separado de la cáscara | Núcleo: `funcional/lib/perritos/estadisticas.ex`. Cáscara: `funcional/lib/perritos/rutas/estadisticas.ex` |
+| Sin estado mutable | `contar_por/2` usa `Enum.reduce`; `Map.update` devuelve un mapa nuevo, nada se modifica |
+| Pattern matching con varias cláusulas | `clave/1`, `nombre_raza/1` y `sumar/2` |
+| Funciones de orden superior | `contar_por/2` recibe una función; `clave/1` devuelve una |
+| Recursión explícita | `sumar/2` |
+| Composición con `\|>` | `dia_de/1`, `mas_comunes/2`, `ordenar_por_clave/1` y `resumen/2` |
+| Pruebas ExUnit (con casos raros) | `funcional/test/estadisticas_test.exs`: 7 pruebas, incluidas sin raza, lista vacía y empate |
+| `@doc` con doctest | `clave/1`, `contar_por/2`, `mas_comunes/2` y `ordenar_por_clave/1` |
+| Funciona con lista y con Stream | Una prueba compara el resultado con una lista y con un `Stream`; `contar_por/2` usa `Enum.reduce`, que acepta ambos |
 
 ## 17. Pruebas
 
