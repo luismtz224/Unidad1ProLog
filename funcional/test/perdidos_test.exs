@@ -118,6 +118,12 @@ defmodule Perritos.PerdidosTest do
       b = perro(2, {0.0, 0.0}, fecha)
       assert Perdidos.ordenar([a, b]) |> Enum.map(& &1.id) == [2, 5]
     end
+
+     test "ordena aunque se mezclen DateTime y NaiveDateTime" do
+      viejo = perro(1, {0.0, 0.0}, ~U[2026-09-01 08:00:00Z])
+      nuevo = perro(2, {0.0, 0.0}, ~N[2026-10-01 08:00:00])
+      assert Perdidos.ordenar([nuevo, viejo]) |> Enum.map(& &1.id) == [1, 2]
+    end
   end
 
   describe "cuadrícula" do
@@ -153,6 +159,20 @@ defmodule Perritos.PerdidosTest do
       a = perro(1, punto(centro()), ~N[2026-11-05 08:00:00])
 
       assert [%{total: 1}] = Perdidos.perdidos([a], todos, 500, @ahora)
+    end
+  end
+
+   describe "dias_sin_verse/2" do
+    test "DateTime y NaiveDateTime con la misma fecha dan los mismos días" do
+      hoy = ~D[2026-11-05]
+      assert Perdidos.dias_sin_verse(%{fecha: ~U[2026-10-01 08:00:00Z]}, hoy) ==
+               Perdidos.dias_sin_verse(%{fecha: ~N[2026-10-01 08:00:00]}, hoy)
+    end
+
+    test "una fecha de otro tipo truena con FunctionClauseError (no adivina)" do
+      assert_raise FunctionClauseError, fn ->
+        Perdidos.dias_sin_verse(%{fecha: "2026-10-01"}, ~D[2026-11-05])
+      end
     end
   end
 end

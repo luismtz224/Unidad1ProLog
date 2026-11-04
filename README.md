@@ -504,7 +504,7 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 | Integrante | Funcionalidad | Issue |
 |---|---|---|
 | Sofía Cortés | Estadísticas | #21 |
-| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+| Ángel Imanol Velázquez Hernández | Perros perdidos de vista | #23 |
 | [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
 
 ## 13. Del P1 al P2
@@ -524,6 +524,8 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 - `frontend/app.js`: la dirección del backend dejó de ser `http://<host>:8000` y ahora es relativa (`/api/...`), porque con el túnel el navegador de quien visita no puede usar `localhost:8000`. Se agregó `FUNCIONAL_URL` (`/f`).
 - `.env.example`: variables nuevas de Docker (`DB_*`).
 - Estadísticas (#21): `frontend/index.html` ganó la pestaña "Estadísticas" y su sección, `frontend/style.css` los estilos de las barras y la gráfica, y se agregó `frontend/f-estadisticas.js` (pide `/f/estadisticas` y dibuja; no cuenta nada).
+- Perros perdidos de vista (#23): `frontend/index.html` ganó la pestaña "Perros Perdidos" y la sección `#view-lost`, `frontend/style.css` los estilos del mapa de zonas y tarjetas laterales, y `frontend/app.js` la lógica para consultar `/f/perdidos` y pintar las celdas en el mapa (no filtra ni agrupa en el cliente).
+- `funcional/lib/perritos/router.ex`: se agregó `forward "/f/perdidos", to: Perritos.Rutas.Perdidos`.
 - [PENDIENTE: cambios al frontend/backend que haga cada funcionalidad, con su issue]
 
 ## 14. Cómo levantarla con Docker
@@ -617,6 +619,63 @@ Si la base de datos no se puede leer, responde 503 con `{"error": "base de datos
 | Pruebas ExUnit (con casos raros) | `funcional/test/estadisticas_test.exs`: 7 pruebas, incluidas sin raza, lista vacía y empate |
 | `@doc` con doctest | `clave/1`, `contar_por/2`, `mas_comunes/2` y `ordenar_por_clave/1` |
 | Funciona con lista y con Stream | Una prueba compara el resultado con una lista y con un `Stream`; `contar_por/2` usa `Enum.reduce`, que acepta ambos |
+
+### Perros perdidos de vista (issue #23)
+
+**Qué hace.** Filtra los perritos que llevan `dias` o más sin volver a reportarse, los agrupa por zonas geográficas (celdas cuadradas de `tamano` metros de lado), ordena los perros dentro de cada zona del más antiguo al más reciente y devuelve las zonas ordenadas de la más poblada a la menos poblada.
+
+**Cómo se usa en la app.** En la pestaña "Perros Perdidos" se muestra un mapa interactivo con las zonas coloreadas según la cantidad de perros sin verse y una barra lateral con las fichas de cada zona (foto, nombre, raza, colores y cuántos días lleva sin verse). El control deslizante o campo numérico "Sin verse desde hace" (`1` a `365` días, `14` por omisión) y el selector "Tamaño de zona" (`250 m`, `500 m`, `1 km`) actualizan el mapa y la lista en tiempo real consultando `/f/perdidos`. Al tocar una zona en el mapa o en la lista lateral, el mapa vuela hacia esa celda y abre el detalle.
+
+**Endpoint.**
+
+| Método | Ruta | Parámetros |
+|---|---|---|
+| GET | `/f/perdidos` | `dias` (opcional, `14` por omisión): días mínimos sin verse · `tamano` (opcional, `500` por omisión): lado de la celda en metros |
+
+Ejemplo real de `/f/perdidos?dias=30&tamano=500`:
+
+```json
+[
+  {
+    "centro": {"lat": 25.4205, "lon": -101.003},
+    "total": 2,
+    "perros": [
+      {
+        "id": 4,
+        "nombre": "Firulais",
+        "raza": "Pastor Alemán",
+        "colores": ["Café", "Negro"],
+        "foto": "/api/imagenes/perro_04.jpg",
+        "dias": 63
+      },
+      {
+        "id": 1,
+        "nombre": "Canela",
+        "raza": null,
+        "colores": ["Dorado"],
+        "foto": "/api/imagenes/perro_01.jpg",
+        "dias": 41
+      }
+    ]
+  }
+]
+```
+
+Si la base de datos no se puede leer, responde 503 con `{"error": "base de datos no disponible"}`.
+
+**Dónde están los requisitos del paradigma.**
+
+| Requisito | Dónde |
+|---|---|
+| Núcleo puro separado de la cáscara | Núcleo: `funcional/lib/perritos/perdidos.ex` (`Perritos.Perdidos`, recibe `ahora` como argumento). Cáscara: `funcional/lib/perritos/rutas/perdidos.ex` (`Perritos.Rutas.Perdidos`, lee el reloj y la base de datos) |
+| Sin estado mutable | Todas las transformaciones (`Stream.filter`, `Enum.group_by`, `Enum.map`, `Enum.sort_by`, `ordenar/1`) construyen colecciones nuevas sin mutar variables ni procesos |
+| Pattern matching con varias cláusulas | `ordenar/1` (`[]` vs `[a \| resto]`), `insertar/2` (`[]` vs `[b \| resto]`), `a_naive/1` (`%NaiveDateTime{}` vs `%DateTime{}`) y `dias_sin_verse/2` |
+| Funciones de orden superior | `perdidos/4` **recibe** una función (`filtro`); `sin_verse_desde/2`, `celda_de/1` y `centro_de/1` **regresan** funciones |
+| Recursión explícita | `ordenar/1` e `insertar/2` (ordenamiento por inserción recursivo del más antiguo al más reciente, desempatando por `id`) |
+| Composición con `\|>` | `perdidos/4` (`avistamientos \|> Stream.filter(...) \|> Enum.group_by(...) \|> Enum.map(...) \|> Enum.sort_by(...)`) y `a_dia/1` |
+| Pruebas ExUnit (con casos borde) | `funcional/test/perdidos_test.exs`: 17 pruebas que cubren lista vacía, límite exacto de días, fecha futura, empate de fechas, coordenadas en bordes/negativas, `DateTime` vs `NaiveDateTime` y `Stream` |
+| `@doc` con doctest | `reporte/4`, `sin_verse_desde/2`, `dias_sin_verse/2`, `perdidos/4`, `celda_de/1`, `centro_de/1` y `ordenar/1` (9 doctests en total) |
+| Uso de `Stream` del equipo | `perdidos/4` filtra con `Stream.filter(filtro)` antes de agrupar, evitando crear una lista intermedia de todos los avistamientos filtrados |
 
 ## 17. Pruebas
 
