@@ -58,4 +58,13 @@ defmodule Perritos.RescateTest do
     assert a_distancia.(perro(1, 0.0, 0.0)) == 0.0
     assert_in_delta a_distancia.(perro(2, 1.0, 0.0)), 111_194.93, 1.0
   end
+
+  test "en_zona deja sólo los perros dentro del radio" do
+    perros = [perro(1, 0.0, 0.001), perro(2, 0.0, 1.0)]
+    assert Rescate.en_zona(@origen, 500, perros) |> Enum.map(& &1.id) == [1]
+  end
+
+  test "en_zona con lista vacía regresa lista vacía" do
+    assert Rescate.en_zona(@origen, 500, []) == []
+  end
 end

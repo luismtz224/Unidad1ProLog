@@ -24,6 +24,20 @@ defmodule Perritos.Rescate do
   end
 
   @doc """
+  Perros dentro del `radio` (en metros) del `punto`: la "zona" de rescate.
+
+  ## Ejemplos
+
+      iex> perros = [%{id: 1, lat: 0.0, lon: 0.001}, %{id: 2, lat: 0.0, lon: 1.0}]
+      iex> Perritos.Rescate.en_zona({0.0, 0.0}, 500, perros) |> Enum.map(& &1.id)
+      [1]
+  """
+  def en_zona(punto, radio_m, perros, metrica \\ &Geo.haversine/2) do
+    a_distancia = distancia_desde(punto, metrica)
+    Enum.filter(perros, &(a_distancia.(&1) <= radio_m))
+  end
+
+  @doc """
   Ruta del vecino más cercano. Recibe la métrica como función (por omisión,
   haversine en metros). Regresa `%{paradas: [...], total_m: metros}`; cada
   parada trae el `perro` y el `tramo_m` desde la parada anterior.
