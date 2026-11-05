@@ -46,6 +46,8 @@ defmodule Perritos.Router do
 
   forward "/f/perdidos", to: Perritos.Rutas.Perdidos
 
+  forward "/f/rescate", to: Perritos.Rutas.Rescate
+
   # ===================================================================
 
   match _ do

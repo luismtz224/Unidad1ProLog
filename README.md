@@ -504,8 +504,8 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 | Integrante | Funcionalidad | Issue |
 |---|---|---|
 | Sofía Cortés | Estadísticas | #21 |
-| Ángel Imanol Velázquez Hernández | Perros perdidos de vista | #23 |
-| [PENDIENTE] | [PENDIENTE] | [PENDIENTE #n] |
+| Ángel Imanol Velázquez Hernández | Perros perdidos de vista | #26 |
+| Luis Fernando Martínez Muñiz | Ruta de rescate | #23 |
 
 ## 13. Del P1 al P2
 
@@ -526,7 +526,7 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 - Estadísticas (#21): `frontend/index.html` ganó la pestaña "Estadísticas" y su sección, `frontend/style.css` los estilos de las barras y la gráfica, y se agregó `frontend/f-estadisticas.js` (pide `/f/estadisticas` y dibuja; no cuenta nada).
 - Perros perdidos de vista (#23): `frontend/index.html` ganó la pestaña "Perros Perdidos" y la sección `#view-lost`, `frontend/style.css` los estilos del mapa de zonas y tarjetas laterales, y `frontend/app.js` la lógica para consultar `/f/perdidos` y pintar las celdas en el mapa (no filtra ni agrupa en el cliente).
 - `funcional/lib/perritos/router.ex`: se agregó `forward "/f/perdidos", to: Perritos.Rutas.Perdidos`.
-- [PENDIENTE: cambios al frontend/backend que haga cada funcionalidad, con su issue]
+- `frontend/index.html` y `frontend/app.js`: pestaña "Rescate" con mapa y ruta (#23).
 
 ## 14. Cómo levantarla con Docker
 
@@ -569,7 +569,27 @@ El servicio Elixir usa la **opción A** (directo a la base, con MyXQL y un usuar
 
 ## 16. Funcionalidades del P2
 
-[PENDIENTE: por cada funcionalidad — issue, qué hace, cómo se usa en la app, endpoints (método, ruta, ejemplo de respuesta) y dónde están los requisitos del paradigma.]
+### Ruta de rescate (issue #23, Luis)
+
+Dado un punto de partida y un radio, toma los perros de esa zona y propone el orden de visita (vecino más cercano) con la distancia total.
+
+**En la app:** pestaña *Rescate* → tocar el mapa o "Usar mi ubicación" → elegir radio → "Calcular ruta". Se dibuja la ruta con las paradas numeradas.
+
+**Endpoint:** `GET /f/rescate?lat=25.43&lon=-101.0&radio=500`
+
+Ejemplo de respuesta:
+{"total_m": 1234.5, "paradas": [{"orden": 1, "id": 103, "nombre": "Chiquis", "lat": 25.4309502, "lon": -101.0000588, "tramo_m": 105.8}]}
+
+Errores: 400 si faltan `lat` o `lon` válidos, 503 si la base no está disponible.
+
+**Dónde está el paradigma:**
+- Núcleo puro: `funcional/lib/perritos/rescate.ex` y `geo.ex` (sin base de datos, sin `conn`, sin imprimir).
+- Función que regresa una función: `distancia_desde/2`.
+- Función que recibe una función: `ruta/3` y `en_zona/4` (parámetro `metrica`).
+- Recursión explícita: `recorrer/3`.
+- Pipelines con `|>`: `ruta/3` y la cáscara.
+- Cáscara: `funcional/lib/perritos/rutas/rescate.ex`.
+- Pruebas: `funcional/test/rescate_test.exs` y `geo_test.exs` (con doctests).
 
 ### Estadísticas (issue #21)
 

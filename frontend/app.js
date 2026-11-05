@@ -223,6 +223,7 @@ function irAVista(nombre) {
   tabs.forEach(t => t.classList.toggle("active", t.dataset.view === nombre));
   views.forEach(v => v.classList.toggle("active", v.id === "view-" + nombre));
   if (nombre === "map") setTimeout(() => fullMap.invalidateSize(), 50);
+  if (nombre === "rescue") setTimeout(() => rescueMap.invalidateSize(), 50);
   if (nombre === "list") renderizarLista();
   if (nombre === "lost") {
     setTimeout(() => {
@@ -298,6 +299,85 @@ function renderizarMapaCompleto() {
   });
 }
 renderizarMapaCompleto();
+
+// ============================================================
+// RESCATE (P2, issue #23) — llama a /f/rescate y dibuja la ruta
+// ============================================================
+const rescueMap = L.map("rescue-map").setView(SALTILLO, 13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "&copy; OpenStreetMap"
+}).addTo(rescueMap);
+const rescueCapa = L.layerGroup().addTo(rescueMap);
+let rescueOrigen = null;
+let rescueInicio = null;
+
+function fijarOrigenRescate(lat, lon) {
+  rescueOrigen = { lat, lon };
+  if (rescueInicio) rescueMap.removeLayer(rescueInicio);
+  rescueInicio = L.marker([lat, lon]).addTo(rescueMap).bindPopup("Punto de partida");
+  document.getElementById("rescate-estado").textContent =
+    `Partida: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+}
+
+rescueMap.on("click", e => fijarOrigenRescate(e.latlng.lat, e.latlng.lng));
+
+document.getElementById("btn-rescate-ubicacion").addEventListener("click", () => {
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fijarOrigenRescate(pos.coords.latitude, pos.coords.longitude);
+      rescueMap.setView([pos.coords.latitude, pos.coords.longitude], 14);
+    },
+    () => {
+      document.getElementById("rescate-estado").textContent = "No se pudo obtener tu ubicación.";
+    }
+  );
+});
+
+function dibujarRuta(datos) {
+  rescueCapa.clearLayers();
+  const puntos = [[rescueOrigen.lat, rescueOrigen.lon], ...datos.paradas.map(p => [p.lat, p.lon])];
+  L.polyline(puntos, { color: "#953014", weight: 4 }).addTo(rescueCapa);
+  datos.paradas.forEach(p => {
+    L.marker([p.lat, p.lon], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div style="background:#953014;color:#fff;border-radius:50%;width:26px;height:26px;line-height:26px;text-align:center;font-weight:700">${p.orden}</div>`,
+        iconSize: [26, 26]
+      })
+    }).bindPopup(escapeHtml(p.nombre)).addTo(rescueCapa);
+  });
+  document.getElementById("rescate-paradas").innerHTML = datos.paradas
+    .map(p => `<li>${escapeHtml(p.nombre)} — ${Math.round(p.tramo_m)} m</li>`)
+    .join("");
+  document.getElementById("rescate-estado").textContent =
+    `${datos.paradas.length} paradas, ${(datos.total_m / 1000).toFixed(2)} km en total`;
+}
+
+document.getElementById("btn-rescate-calcular").addEventListener("click", async () => {
+  const estado = document.getElementById("rescate-estado");
+  if (!rescueOrigen) {
+    estado.textContent = "Primero elige el punto de partida en el mapa.";
+    return;
+  }
+  const radio = document.getElementById("rescate-radio").value || 1000;
+  try {
+    const res = await fetch(
+      `${FUNCIONAL_URL}/rescate?lat=${rescueOrigen.lat}&lon=${rescueOrigen.lon}&radio=${radio}`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const datos = await res.json();
+    if (datos.paradas.length === 0) {
+      rescueCapa.clearLayers();
+      document.getElementById("rescate-paradas").innerHTML = "";
+      estado.textContent = "No hay perros en esa zona.";
+      return;
+    }
+    dibujarRuta(datos);
+  } catch (e) {
+    console.error(e);
+    estado.textContent = "No se pudo calcular la ruta.";
+  }
+});
 
 // ============================================================
 // FOTO — subir de galería
