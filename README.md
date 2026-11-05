@@ -524,7 +524,7 @@ La aplicación del Proyecto 1 crece en este mismo repositorio: cada integrante a
 - `frontend/app.js`: la dirección del backend dejó de ser `http://<host>:8000` y ahora es relativa (`/api/...`), porque con el túnel el navegador de quien visita no puede usar `localhost:8000`. Se agregó `FUNCIONAL_URL` (`/f`).
 - `.env.example`: variables nuevas de Docker (`DB_*`).
 - Estadísticas (#21): `frontend/index.html` ganó la pestaña "Estadísticas" y su sección, `frontend/style.css` los estilos de las barras y la gráfica, y se agregó `frontend/f-estadisticas.js` (pide `/f/estadisticas` y dibuja; no cuenta nada).
-- Perros perdidos de vista (#23): `frontend/index.html` ganó la pestaña "Perros Perdidos" y la sección `#view-lost`, `frontend/style.css` los estilos del mapa de zonas y tarjetas laterales, y `frontend/app.js` la lógica para consultar `/f/perdidos` y pintar las celdas en el mapa (no filtra ni agrupa en el cliente).
+- Perros perdidos de vista (#26): `frontend/index.html` ganó la pestaña "Perros Perdidos" y la sección `#view-lost`, `frontend/style.css` los estilos del mapa de zonas y tarjetas laterales, y `frontend/app.js` la lógica para consultar `/f/perdidos` y pintar las celdas en el mapa (no filtra ni agrupa en el cliente).
 - `funcional/lib/perritos/router.ex`: se agregó `forward "/f/perdidos", to: Perritos.Rutas.Perdidos`.
 - `frontend/index.html` y `frontend/app.js`: pestaña "Rescate" con mapa y ruta (#23).
 
@@ -640,7 +640,7 @@ Si la base de datos no se puede leer, responde 503 con `{"error": "base de datos
 | `@doc` con doctest | `clave/1`, `contar_por/2`, `mas_comunes/2` y `ordenar_por_clave/1` |
 | Funciona con lista y con Stream | Una prueba compara el resultado con una lista y con un `Stream`; `contar_por/2` usa `Enum.reduce`, que acepta ambos |
 
-### Perros perdidos de vista (issue #23)
+### Perros perdidos de vista (issue #26)
 
 **Qué hace.** Filtra los perritos que llevan `dias` o más sin volver a reportarse, los agrupa por zonas geográficas (celdas cuadradas de `tamano` metros de lado), ordena los perros dentro de cada zona del más antiguo al más reciente y devuelve las zonas ordenadas de la más poblada a la menos poblada.
 
