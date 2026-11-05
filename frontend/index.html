@@ -36,6 +36,7 @@
     <button class="tab active" data-view="form">Registrar</button>
     <button class="tab" data-view="map">Mapa</button>
     <button class="tab" data-view="list">Lista</button>
+    <button class="tab" data-view="rescue">Rescate</button>
   </nav>
 </header>
 
@@ -134,6 +135,19 @@
     <ul id="dog-list" class="dog-list"></ul>
   </section>
 
+  <!-- rescate (P2, issue #23) -->
+  <section id="view-rescue" class="view">
+    <div class="location-controls">
+      <button type="button" id="btn-rescate-ubicacion" class="ghost-btn">Usar mi ubicación</button>
+      <label for="rescate-radio">Radio (m)</label>
+      <input type="number" id="rescate-radio" value="1000" min="100" step="100" />
+      <button type="button" id="btn-rescate-calcular" class="photo-btn">Calcular ruta</button>
+    </div>
+    <p id="rescate-estado" class="hint">Toca el mapa para elegir dónde empiezas.</p>
+    <div id="rescue-map" class="full-map"></div>
+    <ol id="rescate-paradas"></ol>
+  </section>
+
   <!-- detalle -->
   <section id="view-detail" class="view">
     <div class="detail-header">
@@ -180,6 +194,6 @@
      app.js en caché (el servidor de pruebas no manda Cache-Control).
      Subir este número cada vez que se cambie app.js y se vaya a
      probar de nuevo desde el celular. -->
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
